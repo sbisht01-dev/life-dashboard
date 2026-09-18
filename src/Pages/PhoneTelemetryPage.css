@@ -1,0 +1,136 @@
+/* Navigation */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  color: var(--text-main);
+}
+
+/* Filter Controls Bar */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--bg-card);
+  padding: 16px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-bento);
+}
+
+.filter-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.clean-input {
+  background: var(--bg-subtle);
+  border: 1px solid transparent;
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.clean-input:focus {
+  background: #ffffff;
+  border-color: var(--border-focus);
+}
+
+/* Full Session Feed */
+.full-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 480px;
+  overflow-y: auto;
+  margin-top: 14px;
+}
+
+.feed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* Badges used in full view */
+.tag-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.tag-amber {
+  background: var(--accent-amber-bg);
+  color: var(--accent-amber);
+}
+
+.tag-live {
+  background: var(--accent-emerald-bg);
+  color: var(--accent-emerald);
+}
+
+/* Timeline Track Wrapper */
+.timeline-track-wrap {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+/* Subtle vertical hour guide lines inside the bar */
+.timeline-grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Hour Labels Row below the bar */
+.timeline-hour-labels {
+  position: relative;
+  height: 20px;
+  margin-top: 8px;
+}
+
+.hour-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Keep edge labels from clipping the card boundaries */
+.hour-label:first-child {
+  transform: translateX(0);
+}
+
+.hour-label:last-child {
+  transform: translateX(-100%);
+}

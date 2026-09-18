@@ -1,0 +1,159 @@
+/* Telemetry Grid Preview */
+.phone-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metric-big {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.metric-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+/* Green shades for Unlocked */
+.badge-unlocked {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.2);
+}
+
+/* Yellow/Amber shades for Locked */
+.badge-locked {
+  background: #fefce8;
+  color: #a16207;
+  border-color: rgba(202, 138, 4, 0.25);
+}
+
+/* Status indicator dots */
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-unlocked {
+  background-color: #059669;
+  box-shadow: 0 0 6px rgba(5, 150, 105, 0.5);
+}
+
+.dot-locked {
+  background-color: #ca8a04;
+}
+
+/* Mini Timeline Bar */
+.mini-timeline-container {
+  margin: 18px 0;
+}
+
+.mini-timeline-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.mini-track {
+  position: relative;
+  height: 14px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mini-chunk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--text-main);
+  border-radius: 1px;
+}
+
+/* Top 5 Table */
+.table-section {
+  margin-top: 14px;
+}
+
+.table-heading {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.top-sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.top-sessions-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.top-sessions-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+}
+
+.top-sessions-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rank-index {
+  color: var(--text-faint);
+  width: 32px;
+}
+
+.duration-pill {
+  display: inline-block;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+}
+
+.tag-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.tag-live {
+  background: #ecfdf5;
+  color: #059669;
+}

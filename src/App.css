@@ -1,0 +1,142 @@
+/* Page Wrapper */
+.app-container {
+  /* max-width: 1440px; */
+  margin: 0 auto;
+  padding: 40px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Header Navbar */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-emerald);
+}
+
+.btn-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  box-shadow: var(--shadow-bento);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-pill:hover {
+  background: var(--bg-subtle);
+  transform: translateY(-1px);
+}
+
+/* Bento Grid System */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+.bento-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  box-shadow: var(--shadow-bento);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive Column Spans */
+.col-12 { grid-column: span 12; }
+.col-8  { grid-column: span 8; }
+.col-6  { grid-column: span 6; }
+.col-4  { grid-column: span 4; }
+
+@media (max-width: 960px) {
+  .col-8, .col-6, .col-4 { grid-column: span 12; }
+}
+
+/* Bento Card Header */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.card-link-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+}
+
+.clickable-card:hover .card-link-badge {
+  color: var(--text-main);
+}
+
+/* Empty Placeholder Slots */
+.empty-slot {
+  border: 1px dashed rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+  min-height: 200px;
+}
+
+.empty-content {
+  margin: auto;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.empty-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.empty-desc {
+  font-size: 11px;
+}

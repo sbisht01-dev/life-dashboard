@@ -1,0 +1,47 @@
+:root {
+  /* Surface & Background Colors */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-hover: #e2e8f0;
+
+  /* Borders & Focus */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-focus: #0f172a;
+
+  /* Elevation Shadows */
+  --shadow-bento: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 16px 32px -4px rgba(0, 0, 0, 0.08);
+
+  /* Typography Colors */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  /* Accents */
+  --accent-emerald: #059669;
+  --accent-emerald-bg: #ecfdf5;
+  --accent-amber: #d97706;
+  --accent-amber-bg: #fffbeb;
+
+  /* Font Families */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
