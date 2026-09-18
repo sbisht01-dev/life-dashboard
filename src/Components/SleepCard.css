@@ -1,0 +1,104 @@
+/* Sleep Bento Card Styles */
+.sleep-metric-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sleep-metric-big {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.sleep-metric-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* Sleep Badges */
+.badge-indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid rgba(79, 70, 229, 0.15);
+}
+
+.badge-dot-indigo {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #4f46e5;
+  box-shadow: 0 0 6px rgba(79, 70, 229, 0.4);
+}
+
+/* Sleep Mini Track */
+.sleep-track-container {
+  margin: 16px 0;
+}
+
+.sleep-track-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.sleep-track {
+  position: relative;
+  height: 12px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sleep-chunk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #4f46e5;
+  border-radius: 1px;
+}
+
+.sleep-awake-chunk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #fbbf24;
+}
+
+/* Sleep Bottom Highlights */
+.sleep-highlights {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+.sleep-highlight-item {
+  background: var(--bg-subtle);
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sleep-highlight-label {
+  color: var(--text-faint);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.sleep-highlight-val {
+  color: var(--text-main);
+  font-weight: 600;
+}

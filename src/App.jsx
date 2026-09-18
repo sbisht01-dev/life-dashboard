@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import PhoneTelemetryCard from './Components/PhoneTelemetryCard';
 import PhoneTelemetryPage from './Pages/PhoneTelemetryPage';
+import SleepCard from './Components/SleepCard';
+import SleepPage from './Pages/SleepPage';
 import './App.css';
 import './index.css';
 const API_URL = "https://api-fargvgjnga-uc.a.run.app/events";
 
 export default function App() {
-  const [activeView, setActiveView] = useState('bento'); // 'bento' | 'telemetry'
+  const [activeView, setActiveView] = useState('bento'); // 'bento' | 'telemetry' | 'sleep'
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Single centralized fetch function
   const fetchTelemetry = async () => {
     setLoading(true);
     try {
@@ -26,12 +27,13 @@ export default function App() {
     }
   };
 
-  // Runs once when the app opens
   useEffect(() => {
     fetchTelemetry();
   }, []);
 
-  // Full Telemetry Page View
+  // -------------------------------------------------------------
+  // FULL PAGE VIEWS
+  // -------------------------------------------------------------
   if (activeView === 'telemetry') {
     return (
       <PhoneTelemetryPage
@@ -43,7 +45,20 @@ export default function App() {
     );
   }
 
-  // Bento Home View
+  if (activeView === 'sleep') {
+    return (
+      <SleepPage
+        events={events}
+        loading={loading}
+        onSync={fetchTelemetry}
+        onBack={() => setActiveView('bento')}
+      />
+    );
+  }
+
+  // -------------------------------------------------------------
+  // BENTO GRID HOME VIEW
+  // -------------------------------------------------------------
   return (
     <div className="app-container">
       {/* Top Navbar */}
@@ -59,15 +74,24 @@ export default function App() {
 
       {/* Main Bento Grid */}
       <div className="bento-grid">
+        {/* Bento Slot 01: Phone Telemetry (Width 8) */}
         <PhoneTelemetryCard
           events={events}
           loading={loading}
           onOpen={() => setActiveView('telemetry')}
         />
 
+        {/* Bento Slot 02: Sleep Telemetry (Width 4) */}
+        <SleepCard
+          events={events}
+          loading={loading}
+          onOpen={() => setActiveView('sleep')}
+        />
+
+        {/* Bento Slot 03: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">
-            <span className="card-title mono">Slot 02</span>
+            <span className="card-title mono">Slot 03</span>
           </div>
           <div className="empty-content mono">
             <div className="empty-title">Music & Audio</div>
@@ -75,9 +99,10 @@ export default function App() {
           </div>
         </div>
 
+        {/* Bento Slot 04: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">
-            <span className="card-title mono">Slot 03</span>
+            <span className="card-title mono">Slot 04</span>
           </div>
           <div className="empty-content mono">
             <div className="empty-title">Daily Focus & Git</div>
@@ -85,16 +110,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bento-card col-4 empty-slot">
-          <div className="card-header">
-            <span className="card-title mono">Slot 04</span>
-          </div>
-          <div className="empty-content mono">
-            <div className="empty-title">Health / Steps</div>
-            <div className="empty-desc">Pending module integration</div>
-          </div>
-        </div>
-
+        {/* Bento Slot 05: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">
             <span className="card-title mono">Slot 05</span>
