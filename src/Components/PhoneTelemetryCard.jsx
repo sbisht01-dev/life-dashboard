@@ -1,7 +1,14 @@
-import { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import "./PhoneTelemetryCard.css";
 
 export default function PhoneTelemetryCard({ onOpen, events, loading }) {
+ 
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const { isUnlocked, todayDurationMs, todaySessions, top5Sessions } = useMemo(() => {
     if (!events || events.length === 0) {
       return { isUnlocked: false, todayDurationMs: 0, todaySessions: [], top5Sessions: [] };
@@ -17,7 +24,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // 1. Determine current state strictly from the MOST RECENT entry
+    // Determine current state strictly from the MOST RECENT entry
     let latestIsUnlocked = false;
     for (let i = sorted.length - 1; i >= 0; i--) {
       const clean = (sorted[i].event || "").replace(/[\[\]]/g, "").trim().toLowerCase();
@@ -30,7 +37,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    // 2. Pair sessions for calculations
+    // Pair sessions for calculations
     const rawSessions = [];
     let pendingUnlock = null;
 
@@ -51,12 +58,13 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    // If currently unlocked, include live active session up to now
+   
     if (pendingUnlock !== null) {
+      const now = Date.now();
       rawSessions.push({
         rawStart: pendingUnlock,
-        rawEnd: Date.now(),
-        durationMs: Date.now() - pendingUnlock,
+        rawEnd: now,
+        durationMs: now - pendingUnlock,
         isActive: true
       });
     }
@@ -89,7 +97,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       todaySessions: visualChunks,
       top5Sessions: top5
     };
-  }, [events]);
+  }, [events, tick]); 
 
   const formatDuration = (ms) => {
     const totalSecs = Math.floor(ms / 1000);
@@ -111,7 +119,6 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
         <span className="card-link-badge mono">Open Full View →</span>
       </div>
 
-      {/* Screen Time & State Badge */}
       <div className="phone-summary-row">
         <div>
           <div className="metric-big mono">
@@ -138,7 +145,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
             <div
               key={s.id}
               style={{ left: `${s.leftPercent}%`, width: `${s.widthPercent}%` }}
-              className="mini-chunk"
+              className={`mini-chunk ${s.isActive ? 'tag-live' : ''}`}
             />
           ))}
         </div>
@@ -165,8 +172,8 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
                 <tr key={idx}>
                   <td className="rank-index">{idx + 1}</td>
                   <td>
-                    {formatClock(s.rawStart)} → {formatClock(s.rawEnd)}
-                    {s.isActive && <span className="tag-badge tag-live">Active</span>}
+                    {formatClock(s.rawStart)} → {s.isActive ? "Now" : formatClock(s.rawEnd)}
+                    {s.isActive && <span className="tag-badge tag-live" style={{ marginLeft: '6px' }}>Live</span>}
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <span className="duration-pill">{formatDuration(s.durationMs)}</span>

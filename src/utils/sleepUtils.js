@@ -1,21 +1,56 @@
+// ============================================================================
+// SLEEP ENGINE CONFIGURATION
+// ============================================================================
+export const SLEEP_CONFIG = {
+  startHour: 23,       // 11:00 PM
+  startMinute: 0,
+
+  endHour: 12,         // 12:00 PM
+  endMinute: 0,
+
+  minAnchorHours: 1,   // Minimum locked gap to trigger sleep (1 hour)
+  maxWasoMinutes: 25,  // Max interruption between wake-ups to stitch
+};
+
 export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = []) {
   if (!events || events.length === 0) return null;
 
-  // Window: 20:00 (8 PM) of previous day to 14:00 (2 PM) of target day
-  const targetDate = new Date(`${targetDateStr}T00:00:00`);
-  const prevDate = new Date(targetDate);
-  prevDate.setDate(prevDate.getDate() - 1);
-  const prevDateStr = prevDate.toISOString().split('T')[0];
+  // 1. Parse target day
+  const [year, month, day] = targetDateStr.split('-').map(Number);
+  const targetDate = new Date(year, month - 1, day);
+  const prevDate = new Date(year, month - 1, day - 1);
 
-  const windowStart = new Date(`${prevDateStr}T23:00:00`).getTime();
-  const windowEnd = new Date(`${targetDateStr}T11:00:00`).getTime();
+  // 2. AUTOMATIC WINDOW DETECTION:
+  // If startHour > endHour (e.g., 22:00 -> 08:00), it's overnight across midnight (starts yesterday).
+  // If startHour <= endHour (e.g., 16:00 -> 19:00), it's same-day (starts today).
+  const isOvernight = SLEEP_CONFIG.startHour > SLEEP_CONFIG.endHour;
+  const startDate = isOvernight ? prevDate : targetDate;
+  const endDate = targetDate;
 
-  // Sort events chronologically
+  const windowStart = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+    SLEEP_CONFIG.startHour,
+    SLEEP_CONFIG.startMinute,
+    0
+  ).getTime();
+
+  const windowEnd = new Date(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate(),
+    SLEEP_CONFIG.endHour,
+    SLEEP_CONFIG.endMinute,
+    0
+  ).getTime();
+
+  // 3. Chronological sort
   const sorted = [...events]
     .filter((e) => e.createdAt)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  // 1. Identify all locked idle intervals (Lock -> Unlock)
+  // 4. Extract locked intervals inside this exact window
   const idleChunks = [];
   let pendingLock = null;
 
@@ -31,7 +66,7 @@ export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = [
         const end = Math.min(time, windowEnd);
         const durationMs = end - start;
 
-        // Filter out tiny phone slips (< 15 mins)
+        // Keep intervals >= 15 minutes
         if (durationMs >= 15 * 60 * 1000) {
           idleChunks.push({
             id: `${start}-${end}`,
@@ -47,57 +82,59 @@ export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = [
     }
   }
 
-  if (idleChunks.length === 0) return null;
+  const emptyResult = {
+    hasSleep: false,
+    idleChunks,
+    stitchedBlocks: [],
+    interruptions: [],
+    windowStart,
+    windowEnd,
+  };
 
-  // 2. Filter out any manually excluded candidate chunks
+  if (idleChunks.length === 0) return emptyResult;
+
+  // 5. Filter out excluded gaps
   const eligibleChunks = idleChunks.filter((c) => !customExcludedIds.includes(c.id));
-  if (eligibleChunks.length === 0) return null;
+  if (eligibleChunks.length === 0) return emptyResult;
 
-  // 3. Find primary anchor sleep block (longest gap >= 2 hours)
+  // 6. Anchor block (longest gap >= minAnchorHours)
   const sortedByDuration = [...eligibleChunks].sort((a, b) => b.durationMs - a.durationMs);
   const primaryAnchor = sortedByDuration[0];
 
-  if (primaryAnchor.durationMs < 2 * 60 * 60 * 1000) {
-    // No substantial sleep block found
-    return {
-      hasSleep: false,
-      idleChunks,
-    };
-  }
+  const minAnchorMs = SLEEP_CONFIG.minAnchorHours * 60 * 60 * 1000;
+  if (primaryAnchor.durationMs < minAnchorMs) return emptyResult;
 
-  // 4. Stitch forward and backward for night awakenings (WASO <= 30 min)
+  // 7. Stitch WASO gaps forward and backward
   eligibleChunks.sort((a, b) => a.start - b.start);
   const anchorIdx = eligibleChunks.findIndex((c) => c.id === primaryAnchor.id);
-
   const stitchedBlocks = [eligibleChunks[anchorIdx]];
+  const maxWasoMs = SLEEP_CONFIG.maxWasoMinutes * 60 * 1000;
 
-  // Stitch backward (e.g. went to bed earlier, woke up briefly)
   for (let i = anchorIdx - 1; i >= 0; i--) {
     const curr = eligibleChunks[i];
     const next = stitchedBlocks[0];
     const awakeTime = next.start - curr.end;
 
-    if (awakeTime <= 30 * 60 * 1000 && curr.durationMs >= 45 * 60 * 1000) {
+    if (awakeTime <= maxWasoMs && curr.durationMs >= 45 * 60 * 1000) {
       stitchedBlocks.unshift(curr);
     } else {
       break;
     }
   }
 
-  // Stitch forward (e.g. woke up at 7am for 5 mins, slept till 10am)
   for (let i = anchorIdx + 1; i < eligibleChunks.length; i++) {
     const curr = eligibleChunks[i];
     const prev = stitchedBlocks[stitchedBlocks.length - 1];
     const awakeTime = curr.start - prev.end;
 
-    if (awakeTime <= 30 * 60 * 1000 && curr.durationMs >= 45 * 60 * 1000) {
+    if (awakeTime <= maxWasoMs && curr.durationMs >= 45 * 60 * 1000) {
       stitchedBlocks.push(curr);
     } else {
       break;
     }
   }
 
-  // 5. Aggregate sleep metrics
+  // 8. Calculate sleep metrics
   const bedTime = stitchedBlocks[0].start;
   const wakeTime = stitchedBlocks[stitchedBlocks.length - 1].end;
   const timeInBedMs = wakeTime - bedTime;
@@ -130,7 +167,7 @@ export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = [
     efficiency,
     interruptions,
     stitchedBlocks,
-    idleChunks, // All detected gaps so user can toggle them
+    idleChunks,
     windowStart,
     windowEnd,
   };

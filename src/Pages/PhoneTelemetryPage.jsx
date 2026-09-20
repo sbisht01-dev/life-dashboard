@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './PhoneTelemetryPage.css';
 
 export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) {
@@ -7,7 +7,14 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
 
-  // 1. Clamped session calculations
+  // 1. Setup a live ticker that updates every second
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. Clamped session calculations (tied to 'tick')
   const { sessions, totalDurationMs, windowSpanMs } = useMemo(() => {
     if (!events || events.length === 0) {
       return { sessions: [], totalDurationMs: 0, windowSpanMs: 1 };
@@ -16,6 +23,7 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
     const windowStartMs = new Date(`${selectedDate}T${startTime}:00`).getTime();
     const windowEndMs = new Date(`${selectedDate}T${endTime}:00`).getTime();
     const span = Math.max(windowEndMs - windowStartMs, 1);
+    const now = Date.now();
 
     const sorted = [...events].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -41,11 +49,12 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
       }
     }
 
+    // If currently unlocked, include live active session up to now
     if (pendingUnlock) {
       rawSessions.push({
         rawStart: pendingUnlock,
-        rawEnd: Date.now(),
-        durationMs: Date.now() - pendingUnlock,
+        rawEnd: now,
+        durationMs: now - pendingUnlock,
         isActive: true,
       });
     }
@@ -87,9 +96,9 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
       totalDurationMs: totalMs,
       windowSpanMs: span,
     };
-  }, [events, selectedDate, startTime, endTime]);
+  }, [events, selectedDate, startTime, endTime, tick]); // <-- Added 'tick' dependency
 
-  // 2. Generate hour labels and tick positions based on the selected span
+  // 3. Generate hour labels and tick positions based on the selected span
   const hourTicks = useMemo(() => {
     const windowStartMs = new Date(`${selectedDate}T${startTime}:00`).getTime();
     const windowEndMs = new Date(`${selectedDate}T${endTime}:00`).getTime();
@@ -239,8 +248,8 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
                     left: `${s.leftPercent}%`,
                     width: `${Math.max(s.widthPercent, 0.4)}%`,
                   }}
-                  title={`${formatClock(s.effectiveStart)} - ${formatClock(s.effectiveEnd)} (${formatDuration(s.durationMs)})`}
-                  className="mini-chunk"
+                  title={`${formatClock(s.effectiveStart)} - ${s.isActive ? 'Now' : formatClock(s.effectiveEnd)} (${formatDuration(s.durationMs)})`}
+                  className={`mini-chunk ${s.isActive ? 'tag-live' : ''}`}
                 />
               ))}
             </div>
@@ -274,10 +283,10 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
               sessions.map((s) => (
                 <div key={s.id} className="feed-item">
                   <div>
-                    <span>{formatClock(s.effectiveStart)} → {formatClock(s.effectiveEnd)}</span>
-                    {s.clippedStart && <span className="tag-badge tag-amber">Started before</span>}
-                    {s.clippedEnd && <span className="tag-badge tag-amber">Ended after</span>}
-                    {s.isActive && <span className="tag-badge tag-live">Active</span>}
+                    <span>{formatClock(s.effectiveStart)} → {s.isActive ? "Now" : formatClock(s.effectiveEnd)}</span>
+                    {s.clippedStart && <span className="tag-badge tag-amber" style={{ marginLeft: "6px" }}>Started before</span>}
+                    {s.clippedEnd && <span className="tag-badge tag-amber" style={{ marginLeft: "6px" }}>Ended after</span>}
+                    {s.isActive && <span className="tag-badge tag-live" style={{ marginLeft: "6px" }}>Active</span>}
                   </div>
                   <span className="duration-pill">{formatDuration(s.durationMs)}</span>
                 </div>

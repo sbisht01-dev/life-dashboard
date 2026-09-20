@@ -8,7 +8,7 @@ import './index.css';
 const API_URL = "https://api-fargvgjnga-uc.a.run.app/events";
 
 export default function App() {
-  const [activeView, setActiveView] = useState('bento'); // 'bento' | 'telemetry' | 'sleep'
+  const [activeView, setActiveView] = useState('bento');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
