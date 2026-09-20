@@ -19,8 +19,10 @@
 
   /* Typography Colors (Darkened for better contrast) */
   --text-main: #0f172a;
-  --text-muted: #475569; /* Was lighter, now darker slate */
-  --text-faint: #64748b;  /* Shifted down one shade */
+  --text-muted: #475569;
+  /* Was lighter, now darker slate */
+  --text-faint: #64748b;
+  /* Shifted down one shade */
 
   /* Primary Brand - Purple Gradient */
   --accent-primary: #8b5cf6;
@@ -42,6 +44,24 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Global Skeleton Loading Animation */
+.skeleton {
+  background: var(--bg-hover);
+  animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-skeleton {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 
 body {

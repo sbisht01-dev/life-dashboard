@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import "./PhoneTelemetryCard.css";
 
-// Strict local date helper (avoids UTC timezone shift bugs late at night)
 const getLocalDateString = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -28,12 +27,10 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
     const daySpan = windowEndMs - windowStartMs;
     const now = Date.now();
 
-    // Chronological order (oldest to newest)
     const sorted = [...events].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // 1. Determine current state strictly from the MOST RECENT entry
     let latestIsUnlocked = false;
     for (let i = sorted.length - 1; i >= 0; i--) {
       const clean = (sorted[i].event || "").replace(/[\[\]]/g, "").trim().toLowerCase();
@@ -46,7 +43,6 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    // 2. Pair all raw sessions
     const rawSessions = [];
     let pendingUnlock = null;
 
@@ -57,24 +53,15 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       if (clean === "device unlocked") {
         pendingUnlock = evTime;
       } else if (clean === "device locked" && pendingUnlock) {
-        rawSessions.push({
-          rawStart: pendingUnlock,
-          rawEnd: evTime,
-          isActive: false
-        });
+        rawSessions.push({ rawStart: pendingUnlock, rawEnd: evTime, isActive: false });
         pendingUnlock = null;
       }
     }
 
     if (pendingUnlock !== null) {
-      rawSessions.push({
-        rawStart: pendingUnlock,
-        rawEnd: now,
-        isActive: true
-      });
+      rawSessions.push({ rawStart: pendingUnlock, rawEnd: now, isActive: true });
     }
 
-    // 3. Clamp sessions strictly to today's midnight-to-midnight window
     const clamped = [];
     let totalMs = 0;
 
@@ -86,7 +73,6 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
 
         if (durationMs > 0) {
           totalMs += durationMs;
-
           const leftPercent = ((effectiveStart - windowStartMs) / daySpan) * 100;
           const widthPercent = (durationMs / daySpan) * 100;
 
@@ -105,10 +91,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    // Top 5 uses the clamped duration so it never reports > 24hrs
-    const top5 = [...clamped]
-      .sort((a, b) => b.durationMs - a.durationMs)
-      .slice(0, 5);
+    const top5 = [...clamped].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
 
     return {
       isUnlocked: latestIsUnlocked,
@@ -128,8 +111,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
     return `${secs}s`;
   };
 
-  const formatClock = (ms) =>
-    new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatClock = (ms) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="bento-card col-8 clickable-card" onClick={onOpen}>
@@ -138,57 +120,75 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
         <span className="card-link-badge mono">Open Full View →</span>
       </div>
 
-      {/* Screen Time & State Badge */}
       <div className="phone-summary-row">
         <div>
-          <div className="metric-big mono">
-            {loading ? "..." : formatDuration(todayDurationMs)}
-          </div>
+          {loading ? (
+            <div className="skeleton" style={{ width: '140px', height: '36px', borderRadius: '8px' }}></div>
+          ) : (
+            <div className="metric-big mono">{formatDuration(todayDurationMs)}</div>
+          )}
           <div className="metric-desc mono">Screen time today</div>
         </div>
         <div>
-          <span className={`badge mono ${isUnlocked ? "badge-unlocked" : "badge-locked"}`}>
-            <span className={`badge-dot ${isUnlocked ? "dot-unlocked" : "dot-locked"}`}></span>
-            {isUnlocked ? "Unlocked" : "Locked"}
-          </span>
+          {loading ? (
+            <div className="skeleton" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div>
+          ) : (
+            <span className={`badge mono ${isUnlocked ? "badge-unlocked" : "badge-locked"}`}>
+              <span className={`badge-dot ${isUnlocked ? "dot-unlocked" : "dot-locked"}`}></span>
+              {isUnlocked ? "Unlocked" : "Locked"}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Mini Distribution Bar */}
       <div className="mini-timeline-container">
         <div className="mini-timeline-label mono">
           <span>Today's Distribution</span>
           <span>00:00 — 23:59</span>
         </div>
-        <div className="mini-track">
-          {todaySessions.map((s) => (
-            <div
-              key={s.id}
-              style={{ left: `${s.leftPercent}%`, width: `${s.widthPercent}%` }}
-              className={`mini-chunk ${s.isActive ? 'tag-live' : ''}`}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="skeleton" style={{ width: '100%', height: '14px', borderRadius: '6px' }}></div>
+        ) : (
+          <div className="mini-track">
+            {todaySessions.map((s) => (
+              <div
+                key={s.id}
+                style={{ left: `${s.leftPercent}%`, width: `${s.widthPercent}%` }}
+                className={`mini-chunk ${s.isActive ? 'tag-live' : ''}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Top 5 Sessions Table */}
       <div className="table-section">
         <div className="table-heading mono">Top 5 Longest Sessions Today</div>
-        {top5Sessions.length === 0 ? (
-          <div className="mono" style={{ fontSize: "12px", color: "var(--text-faint)", padding: "8px 0" }}>
-            {loading ? "Fetching logs..." : "No completed sessions logged today yet."}
-          </div>
-        ) : (
-          <table className="top-sessions-table mono">
-            <thead>
+        <table className="top-sessions-table mono">
+          <thead>
+            <tr>
+              <th className="rank-index">#</th>
+              <th>Time Range</th>
+              <th style={{ textAlign: "right" }}>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              // Generate 3 skeleton rows while loading
+              [...Array(3)].map((_, idx) => (
+                <tr key={idx}>
+                  <td><div className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '4px' }}></div></td>
+                  <td><div className="skeleton" style={{ width: '120px', height: '16px', borderRadius: '4px' }}></div></td>
+                  <td style={{ textAlign: "right" }}><div className="skeleton" style={{ width: '60px', height: '22px', borderRadius: '12px', float: 'right' }}></div></td>
+                </tr>
+              ))
+            ) : top5Sessions.length === 0 ? (
               <tr>
-                <th className="rank-index">#</th>
-                <th>Time Range</th>
-                <th style={{ textAlign: "right" }}>Duration</th>
+                <td colSpan="3" style={{ color: "var(--text-faint)", padding: "12px 0", border: "none" }}>
+                  No completed sessions logged today yet.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {top5Sessions.map((s, idx) => (
+            ) : (
+              top5Sessions.map((s, idx) => (
                 <tr key={idx}>
                   <td className="rank-index">{idx + 1}</td>
                   <td>
@@ -199,10 +199,10 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
                     <span className="duration-pill">{formatDuration(s.durationMs)}</span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

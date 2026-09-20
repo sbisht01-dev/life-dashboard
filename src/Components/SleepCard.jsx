@@ -40,14 +40,42 @@ export default function SleepCard({ events, loading, onOpen }) {
         <span className="card-link-badge mono">Full View →</span>
       </div>
 
-      {!sleepData || !sleepData.hasSleep ? (
+      {loading ? (
+        /* Skeleton Loading State */
+        <>
+          <div className="sleep-metric-row">
+            <div>
+              <div className="skeleton" style={{ width: '130px', height: '36px', borderRadius: '8px', marginBottom: '8px' }}></div>
+              <div className="skeleton" style={{ width: '100px', height: '14px', borderRadius: '4px' }}></div>
+            </div>
+            <div>
+              <div className="skeleton" style={{ width: '70px', height: '24px', borderRadius: '12px' }}></div>
+            </div>
+          </div>
+
+          <div className="sleep-track-container" style={{ marginTop: '16px' }}>
+            <div className="sleep-track-labels mono" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <div className="skeleton" style={{ width: '40px', height: '12px', borderRadius: '4px' }}></div>
+              <div className="skeleton" style={{ width: '40px', height: '12px', borderRadius: '4px' }}></div>
+            </div>
+            <div className="skeleton" style={{ width: '100%', height: '14px', borderRadius: '4px' }}></div>
+          </div>
+
+          <div className="sleep-highlights mono" style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+            <div className="skeleton" style={{ flex: 1, height: '42px', borderRadius: '8px' }}></div>
+            <div className="skeleton" style={{ flex: 1, height: '42px', borderRadius: '8px' }}></div>
+          </div>
+        </>
+      ) : !sleepData || !sleepData.hasSleep ? (
+        /* Empty State (No Sleep Found) */
         <div className="empty-content mono" style={{ margin: "auto 0", padding: "16px 0" }}>
           <div className="metric-big mono">--</div>
           <div className="sleep-metric-sub">
-            {loading ? "Calculating sleep..." : "No sleep block recorded last night"}
+            No sleep block recorded last night
           </div>
         </div>
       ) : (
+        /* Loaded Data State */
         <>
           <div className="sleep-metric-row">
             <div>
@@ -59,7 +87,6 @@ export default function SleepCard({ events, loading, onOpen }) {
               </div>
             </div>
             <div>
-              {/* Updated to use the primary purple theme classes */}
               <span className="badge badge-primary mono">
                 <span className="badge-dot-primary"></span>
                 {sleepData.efficiency}% Eff.

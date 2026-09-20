@@ -24,7 +24,7 @@ const fetchFallbackArtwork = async (artist, trackName) => {
 
 export default function YtMusicCard() {
   const [track, setTrack] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Starts true on initial page load
 
   useEffect(() => {
     const fetchNowPlaying = async () => {
@@ -55,7 +55,7 @@ export default function YtMusicCard() {
       } catch (err) {
         console.error("Failed to fetch music data", err);
       } finally {
-        setLoading(false);
+        setLoading(false); // Shuts off the skeleton loaders
       }
     };
 
@@ -64,21 +64,32 @@ export default function YtMusicCard() {
     return () => clearInterval(interval);
   }, []);
 
+  const isInitialLoad = loading && !track;
+
   return (
     <div className="bento-card col-4 music-bento" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
       
-      {track?.albumArt && (
+      {/* Background artwork glow */}
+      {track?.albumArt && !isInitialLoad && (
         <div 
           className="music-bg-blur" 
           style={{ backgroundImage: `url(${track.albumArt})` }}
         />
       )}
 
+      {/* Standard Card Header */}
       <div className="card-header" style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>
         <span className="card-title mono">
-          {track?.isPlaying ? "Now Playing" : "Recently Played"}
+          {isInitialLoad ? (
+            <div className="skeleton" style={{ width: '90px', height: '12px', borderRadius: '4px', display: 'inline-block' }}></div>
+          ) : track?.isPlaying ? (
+            "Now Playing"
+          ) : (
+            "Recently Played"
+          )}
         </span>
-        {track?.isPlaying ? (
+        
+        {isInitialLoad ? null : track?.isPlaying ? (
           <div className="equalizer">
             <div className="eq-bar"></div>
             <div className="eq-bar"></div>
@@ -90,12 +101,14 @@ export default function YtMusicCard() {
         )}
       </div>
 
-      {/* HARDCODED FLEXBOX ROW TO FORCE SIDE-BY-SIDE ALIGNMENT */}
+      {/* HARDCODED FLEXBOX ROW */}
       <div className="music-body" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: 'auto', position: 'relative', zIndex: 1 }}>
         
-        {/* HARDCODED 64px CONSTRAINTS */}
         <div className="album-art-wrap" style={{ flexShrink: 0, width: '64px', height: '64px' }}>
-          {track?.albumArt ? (
+          {isInitialLoad ? (
+            /* Skeleton Artwork Block */
+            <div className="skeleton" style={{ width: '64px', height: '64px', borderRadius: '12px' }}></div>
+          ) : track?.albumArt ? (
             <img 
               src={track.albumArt} 
               alt={track.name} 
@@ -111,14 +124,23 @@ export default function YtMusicCard() {
           )}
         </div>
 
-        {/* HARDCODED TEXT TRUNCATION */}
-        <div className="track-text-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
-          <div className="track-title mono" title={track?.name} style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {loading ? "Fetching..." : track?.name || "No track active"}
-          </div>
-          <div className="track-artist-line mono" title={track?.artist} style={{ fontSize: '13px', fontWeight: '500', color: 'var(--accent-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {loading ? "..." : track?.artist || "YouTube Music"}
-          </div>
+        <div className="track-text-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
+          {isInitialLoad ? (
+            /* Skeleton Text Bars */
+            <>
+              <div className="skeleton" style={{ width: '80%', height: '16px', borderRadius: '4px' }}></div>
+              <div className="skeleton" style={{ width: '50%', height: '14px', borderRadius: '4px', marginTop: '2px' }}></div>
+            </>
+          ) : (
+            <>
+              <div className="track-title mono" title={track?.name} style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {track?.name || "No track active"}
+              </div>
+              <div className="track-artist-line mono" title={track?.artist} style={{ fontSize: '13px', fontWeight: '500', color: 'var(--accent-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {track?.artist || "YouTube Music"}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
