@@ -10,6 +10,7 @@
   cursor: pointer;
   padding: 0;
   font-weight: 500;
+  transition: color 0.15s ease;
 }
 
 .back-btn:hover {
@@ -26,7 +27,7 @@
   background: var(--bg-card);
   padding: 16px 20px;
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: var(--radius-lg); /* Updated to match Bento Cards */
   box-shadow: var(--shadow-bento);
 }
 
@@ -43,7 +44,7 @@
   border: 1px solid transparent;
   color: var(--text-main);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 8px; /* Slightly softer input borders */
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -51,7 +52,7 @@
 
 .clean-input:focus {
   background: #ffffff;
-  border-color: var(--border-focus);
+  border-color: var(--accent-primary); /* Focus shifts to purple */
 }
 
 /* Full Session Feed */
@@ -70,7 +71,7 @@
   align-items: center;
   padding: 12px 14px;
   background: var(--bg-subtle);
-  border-radius: 8px;
+  border-radius: 12px; /* Softer feed list items */
   font-size: 12px;
 }
 
@@ -93,14 +94,13 @@
   color: var(--accent-emerald);
 }
 
-/* Timeline Track Wrapper */
+/* Timeline Track Wrapper (For Legacy Usage) */
 .timeline-track-wrap {
   display: flex;
   flex-direction: column;
   margin-top: 4px;
 }
 
-/* Subtle vertical hour guide lines inside the bar */
 .timeline-grid-line {
   position: absolute;
   top: 0;
@@ -111,7 +111,6 @@
   z-index: 1;
 }
 
-/* Hour Labels Row below the bar */
 .timeline-hour-labels {
   position: relative;
   height: 20px;
@@ -126,7 +125,6 @@
   white-space: nowrap;
 }
 
-/* Keep edge labels from clipping the card boundaries */
 .hour-label:first-child {
   transform: translateX(0);
 }

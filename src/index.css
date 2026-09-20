@@ -9,16 +9,25 @@
   --border-subtle: rgba(0, 0, 0, 0.06);
   --border-focus: #0f172a;
 
+  /* Global Border Radii (New Softer Look) */
+  --radius-pill: 12px;
+  --radius-lg: 24px;
+
   /* Elevation Shadows */
-  --shadow-bento: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 16px 32px -4px rgba(0, 0, 0, 0.08);
+  --shadow-bento: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 12px 32px -4px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 24px 40px -8px rgba(0, 0, 0, 0.1);
 
-  /* Typography Colors */
+  /* Typography Colors (Darkened for better contrast) */
   --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
+  --text-muted: #475569; /* Was lighter, now darker slate */
+  --text-faint: #64748b;  /* Shifted down one shade */
 
-  /* Accents */
+  /* Primary Brand - Purple Gradient */
+  --accent-primary: #8b5cf6;
+  --accent-primary-gradient: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  --accent-primary-bg: #f5f3ff;
+
+  /* Utility Accents */
   --accent-emerald: #059669;
   --accent-emerald-bg: #ecfdf5;
   --accent-amber: #d97706;
