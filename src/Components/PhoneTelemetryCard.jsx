@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import "./PhoneTelemetryCard.css";
 
+// Strict local date helper (avoids UTC timezone shift bugs late at night)
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function PhoneTelemetryCard({ onOpen, events, loading }) {
- 
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
@@ -14,17 +22,18 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       return { isUnlocked: false, todayDurationMs: 0, todaySessions: [], top5Sessions: [] };
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const midnightToday = new Date(`${todayStr}T00:00:00`).getTime();
-    const endToday = new Date(`${todayStr}T23:59:59`).getTime();
-    const daySpan = endToday - midnightToday;
+    const todayStr = getLocalDateString();
+    const windowStartMs = new Date(`${todayStr}T00:00:00`).getTime();
+    const windowEndMs = new Date(`${todayStr}T23:59:59`).getTime();
+    const daySpan = windowEndMs - windowStartMs;
+    const now = Date.now();
 
     // Chronological order (oldest to newest)
     const sorted = [...events].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // Determine current state strictly from the MOST RECENT entry
+    // 1. Determine current state strictly from the MOST RECENT entry
     let latestIsUnlocked = false;
     for (let i = sorted.length - 1; i >= 0; i--) {
       const clean = (sorted[i].event || "").replace(/[\[\]]/g, "").trim().toLowerCase();
@@ -37,7 +46,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    // Pair sessions for calculations
+    // 2. Pair all raw sessions
     const rawSessions = [];
     let pendingUnlock = null;
 
@@ -51,53 +60,63 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
         rawSessions.push({
           rawStart: pendingUnlock,
           rawEnd: evTime,
-          durationMs: evTime - pendingUnlock,
           isActive: false
         });
         pendingUnlock = null;
       }
     }
 
-   
     if (pendingUnlock !== null) {
-      const now = Date.now();
       rawSessions.push({
         rawStart: pendingUnlock,
         rawEnd: now,
-        durationMs: now - pendingUnlock,
         isActive: true
       });
     }
 
-    // Filter sessions belonging to today
-    const forToday = rawSessions.filter(
-      (s) => s.rawStart >= midnightToday && s.rawStart <= endToday
-    );
+    // 3. Clamp sessions strictly to today's midnight-to-midnight window
+    const clamped = [];
+    let totalMs = 0;
 
-    // Timeline distribution chunks
-    const visualChunks = forToday.map((s) => {
-      const leftPercent = ((s.rawStart - midnightToday) / daySpan) * 100;
-      const widthPercent = (s.durationMs / daySpan) * 100;
-      return {
-        id: `${s.rawStart}-${s.rawEnd}`,
-        leftPercent,
-        widthPercent: Math.max(widthPercent, 0.4)
-      };
-    });
+    for (const s of rawSessions) {
+      if (s.rawStart < windowEndMs && s.rawEnd > windowStartMs) {
+        const effectiveStart = Math.max(s.rawStart, windowStartMs);
+        const effectiveEnd = Math.min(s.rawEnd, windowEndMs);
+        const durationMs = effectiveEnd - effectiveStart;
 
-    const totalMs = forToday.reduce((acc, curr) => acc + curr.durationMs, 0);
+        if (durationMs > 0) {
+          totalMs += durationMs;
 
-    const top5 = [...forToday]
+          const leftPercent = ((effectiveStart - windowStartMs) / daySpan) * 100;
+          const widthPercent = (durationMs / daySpan) * 100;
+
+          clamped.push({
+            id: `${s.rawStart}-${s.rawEnd}`,
+            rawStart: s.rawStart,
+            rawEnd: s.rawEnd,
+            effectiveStart,
+            effectiveEnd,
+            durationMs,
+            leftPercent,
+            widthPercent: Math.max(widthPercent, 0.4),
+            isActive: s.isActive
+          });
+        }
+      }
+    }
+
+    // Top 5 uses the clamped duration so it never reports > 24hrs
+    const top5 = [...clamped]
       .sort((a, b) => b.durationMs - a.durationMs)
       .slice(0, 5);
 
     return {
       isUnlocked: latestIsUnlocked,
       todayDurationMs: totalMs,
-      todaySessions: visualChunks,
+      todaySessions: clamped,
       top5Sessions: top5
     };
-  }, [events, tick]); 
+  }, [events, tick]);
 
   const formatDuration = (ms) => {
     const totalSecs = Math.floor(ms / 1000);
@@ -119,6 +138,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
         <span className="card-link-badge mono">Open Full View →</span>
       </div>
 
+      {/* Screen Time & State Badge */}
       <div className="phone-summary-row">
         <div>
           <div className="metric-big mono">
@@ -172,7 +192,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
                 <tr key={idx}>
                   <td className="rank-index">{idx + 1}</td>
                   <td>
-                    {formatClock(s.rawStart)} → {s.isActive ? "Now" : formatClock(s.rawEnd)}
+                    {formatClock(s.effectiveStart)} → {s.isActive ? "Now" : formatClock(s.effectiveEnd)}
                     {s.isActive && <span className="tag-badge tag-live" style={{ marginLeft: '6px' }}>Live</span>}
                   </td>
                   <td style={{ textAlign: "right" }}>
