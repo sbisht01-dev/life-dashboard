@@ -5,6 +5,7 @@ import SleepCard from './Components/SleepCard';
 import SleepPage from './Pages/SleepPage';
 import './App.css';
 import './index.css';
+import YtMusicCard from './Components/YtMusicCard';
 const API_URL = "https://api-fargvgjnga-uc.a.run.app/events";
 
 export default function App() {
@@ -89,15 +90,7 @@ export default function App() {
         />
 
         {/* Bento Slot 03: Empty Placeholder (Width 4) */}
-        <div className="bento-card col-4 empty-slot">
-          <div className="card-header">
-            <span className="card-title mono">Slot 03</span>
-          </div>
-          <div className="empty-content mono">
-            <div className="empty-title">Music & Audio</div>
-            <div className="empty-desc">Pending module integration</div>
-          </div>
-        </div>
+        <YtMusicCard />
 
         {/* Bento Slot 04: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">

@@ -1,0 +1,126 @@
+/* Card Container */
+.music-bento {
+  position: relative;
+  overflow: hidden !important; /* Forces the image to never break the card border */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  min-height: 200px;
+}
+
+/* Background Artwork Glow */
+.music-bg-blur {
+  position: absolute;
+  top: -40%;
+  left: -40%;
+  width: 180%;
+  height: 180%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(36px) brightness(0.9);
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Header Elements */
+.music-idle-tag {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Animated Equalizer */
+.equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 14px;
+}
+
+.eq-bar {
+  width: 3px;
+  background: var(--accent-primary);
+  border-radius: 2px;
+  animation: eq-bounce 1s infinite ease-in-out;
+}
+
+.eq-bar:nth-child(1) { animation-delay: 0.0s; height: 50%; }
+.eq-bar:nth-child(2) { animation-delay: 0.25s; height: 100%; }
+.eq-bar:nth-child(3) { animation-delay: 0.45s; height: 75%; }
+.eq-bar:nth-child(4) { animation-delay: 0.15s; height: 40%; }
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+/* Body Layout (Forces side-by-side alignment) */
+.music-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: auto;
+}
+
+/* Artwork / Icon Wrapper */
+.album-art-wrap {
+  flex-shrink: 0;
+}
+
+/* Locked-down Image Constraints */
+.album-art {
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  display: block;
+}
+
+.album-art-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Text Hierarchy */
+.track-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0; /* Critical: Enables text truncation instead of pushing */
+  flex: 1;
+}
+
+.track-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.track-artist-line {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
