@@ -1,20 +1,114 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './PhoneTelemetryPage.css';
 
+// ------------------------------------------------------------------
+// SVG Dual-Clock Component
+// ------------------------------------------------------------------
+const ClockRing = ({ sessions, type, selectedDate }) => {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+
+  // Define the 12-hour window for this specific clock
+  const midnightMs = new Date(`${selectedDate}T00:00:00`).getTime();
+  const twelveHoursMs = 12 * 60 * 60 * 1000;
+  const clockStart = type === 'AM' ? midnightMs : midnightMs + twelveHoursMs;
+  const clockEnd = clockStart + twelveHoursMs;
+  
+  // Filter and clamp the sessions strictly to this clock's 12h window
+  const clockSessions = sessions.map(s => {
+    const start = Math.max(s.effectiveStart, clockStart);
+    const end = Math.min(s.effectiveEnd, clockEnd);
+    if (end > start) {
+      return { ...s, start, end };
+    }
+    return null;
+  }).filter(Boolean);
+
+  return (
+    <div style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto' }}>
+      {/* -90deg rotation puts 00:00 / 12:00 at the top center */}
+      <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', overflow: 'visible' }}>
+
+        {/* Background Track - Fixed: Removed s.isActive here */}
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--border-subtle)" strokeWidth="6" opacity="0.5" />
+
+        {/* Hour Ticks */}
+        {[...Array(12)].map((_, i) => {
+          const angle = i * 30; // 360deg / 12 hours
+          return (
+            <line
+              key={i}
+              x1="50" y1="7" x2="50" y2="13"
+              stroke="var(--text-faint)"
+              strokeWidth="1.5"
+              transform={`rotate(${angle} 50 50)`}
+            />
+          )
+        })}
+
+        {/* Phone Usage Boundary Rings */}
+        {clockSessions.map((s, idx) => {
+          const startPercent = (s.start - clockStart) / twelveHoursMs;
+          const durationPercent = (s.end - s.start) / twelveHoursMs;
+
+          // Ensure even tiny 10-second sessions render a minimum visible sliver (0.8px)
+          const length = Math.max(durationPercent * circumference, 0.8);
+
+          // Negative offset pushes the dash forward around the circle
+          const offset = -(startPercent * circumference);
+
+          return (
+            <circle
+              key={`${s.id}-${type}-${idx}`}
+              cx="50" cy="50" r={radius}
+              fill="none"
+              /* Fixed: Applied the primary purple color here */
+              stroke={s.isActive ? "var(--accent-emerald)" : "var(--accent-primary)"}
+              strokeWidth="6"
+              strokeDasharray={`${length} ${circumference}`}
+              strokeDashoffset={offset}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Center Labels */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+        <span className="mono" style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)' }}>{type}</span>
+        <span className="mono" style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
+          {type === 'AM' ? '00:00-11:59' : '12:00-23:59'}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+
+// ------------------------------------------------------------------
+// Main Page Component
+// ------------------------------------------------------------------
 export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) {
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
 
-  // 1. Setup a live ticker that updates every second
+  // Helper to safely shift dates by +/- days without timezone bugs
+  const shiftDate = (daysOffset) => {
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const nextDate = new Date(y, m - 1, d + daysOffset);
+    const year = nextDate.getFullYear();
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    setSelectedDate(`${year}-${month}-${day}`);
+  };
+
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Clamped session calculations (tied to 'tick')
   const { sessions, totalDurationMs, windowSpanMs } = useMemo(() => {
     if (!events || events.length === 0) {
       return { sessions: [], totalDurationMs: 0, windowSpanMs: 1 };
@@ -49,7 +143,6 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
       }
     }
 
-    // If currently unlocked, include live active session up to now
     if (pendingUnlock) {
       rawSessions.push({
         rawStart: pendingUnlock,
@@ -71,9 +164,6 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
         if (durationMs > 0) {
           totalMs += durationMs;
 
-          const leftPercent = ((effectiveStart - windowStartMs) / span) * 100;
-          const widthPercent = (durationMs / span) * 100;
-
           clamped.push({
             id: `${s.rawStart}-${s.rawEnd}`,
             rawStart: s.rawStart,
@@ -81,8 +171,6 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
             effectiveStart,
             effectiveEnd,
             durationMs,
-            leftPercent,
-            widthPercent,
             clippedStart: s.rawStart < windowStartMs,
             clippedEnd: s.rawEnd > windowEndMs,
             isActive: s.isActive,
@@ -96,40 +184,7 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
       totalDurationMs: totalMs,
       windowSpanMs: span,
     };
-  }, [events, selectedDate, startTime, endTime, tick]); // <-- Added 'tick' dependency
-
-  // 3. Generate hour labels and tick positions based on the selected span
-  const hourTicks = useMemo(() => {
-    const windowStartMs = new Date(`${selectedDate}T${startTime}:00`).getTime();
-    const windowEndMs = new Date(`${selectedDate}T${endTime}:00`).getTime();
-    const span = Math.max(windowEndMs - windowStartMs, 1);
-    const totalHours = span / (1000 * 60 * 60);
-
-    // Pick an interval step so labels don't overlap
-    let stepHours = 1;
-    if (totalHours > 16) stepHours = 2;       // Every 2h for full-day views
-    else if (totalHours > 8) stepHours = 2;  // Every 2h for 9-18 work views
-    else stepHours = 1;                      // Every 1h for short windows
-
-    const ticks = [];
-    const cur = new Date(windowStartMs);
-    cur.setMinutes(0, 0, 0);
-
-    while (cur.getTime() <= windowEndMs) {
-      const curTime = cur.getTime();
-      if (curTime >= windowStartMs) {
-        const hours = cur.getHours();
-        if (hours % stepHours === 0) {
-          const leftPercent = ((curTime - windowStartMs) / span) * 100;
-          const label = `${String(hours).padStart(2, '0')}:00`;
-          ticks.push({ timeMs: curTime, leftPercent, label });
-        }
-      }
-      cur.setHours(cur.getHours() + 1);
-    }
-
-    return ticks;
-  }, [selectedDate, startTime, endTime]);
+  }, [events, selectedDate, startTime, endTime, tick]);
 
   const formatDuration = (ms) => {
     const totalSecs = Math.floor(ms / 1000);
@@ -159,13 +214,39 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
       <section className="filter-bar mono">
         <div className="filter-inputs">
           <label style={{ color: "var(--text-muted)" }}>Date</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="clean-input mono"
-          />
-          <label style={{ color: "var(--text-muted)", marginLeft: "8px" }}>Span</label>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button 
+              onClick={() => shiftDate(-1)} 
+              className="btn-pill" 
+              style={{ padding: "4px 8px", minWidth: "auto" }}
+              title="Previous Day"
+            >
+              ◀
+            </button>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="clean-input mono"
+            />
+            <button 
+              onClick={() => shiftDate(1)} 
+              disabled={selectedDate === todayStr}
+              className="btn-pill" 
+              style={{ 
+                padding: "4px 8px", 
+                minWidth: "auto", 
+                opacity: selectedDate === todayStr ? 0.3 : 1,
+                cursor: selectedDate === todayStr ? "not-allowed" : "pointer"
+              }}
+              title="Next Day"
+            >
+              ▶
+            </button>
+          </div>
+
+          <label style={{ color: "var(--text-muted)", marginLeft: "12px" }}>Span</label>
           <input
             type="time"
             value={startTime}
@@ -221,51 +302,16 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
           <div className="metric-desc mono">Active vs idle window ratio</div>
         </div>
 
-        {/* Timeline Distribution with Hour Labels and Grid Lines */}
+        {/* Dual Clock Distribution */}
         <div className="bento-card col-12">
           <div className="card-header">
-            <span className="card-title mono">Timeline Distribution</span>
+            <span className="card-title mono">12-Hour Cycle Distribution</span>
             <span className="card-title mono">{startTime} — {endTime}</span>
           </div>
 
-          <div className="timeline-track-wrap">
-            {/* Track with internal grid ticks and active session bars */}
-            <div className="mini-track" style={{ height: "26px", position: "relative" }}>
-              {/* Hour Grid Markers inside the track */}
-              {hourTicks.map((t) => (
-                <div
-                  key={t.timeMs}
-                  className="timeline-grid-line"
-                  style={{ left: `${t.leftPercent}%` }}
-                />
-              ))}
-
-              {/* Active Session Chunks */}
-              {sessions.map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    left: `${s.leftPercent}%`,
-                    width: `${Math.max(s.widthPercent, 0.4)}%`,
-                  }}
-                  title={`${formatClock(s.effectiveStart)} - ${s.isActive ? 'Now' : formatClock(s.effectiveEnd)} (${formatDuration(s.durationMs)})`}
-                  className={`mini-chunk ${s.isActive ? 'tag-live' : ''}`}
-                />
-              ))}
-            </div>
-
-            {/* Hour Text Labels below the track */}
-            <div className="timeline-hour-labels mono">
-              {hourTicks.map((t) => (
-                <span
-                  key={t.timeMs}
-                  className="hour-label"
-                  style={{ left: `${t.leftPercent}%` }}
-                >
-                  {t.label}
-                </span>
-              ))}
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '36px 0', flexWrap: 'wrap', gap: '32px' }}>
+            <ClockRing sessions={sessions} type="AM" selectedDate={selectedDate} />
+            <ClockRing sessions={sessions} type="PM" selectedDate={selectedDate} />
           </div>
         </div>
 
