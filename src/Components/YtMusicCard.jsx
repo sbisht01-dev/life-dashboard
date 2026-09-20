@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import './YtMusicCard.jsx';
+import './YtMusicCard.css';
 
-// TODO: Replace with your actual Last.fm details
-const LASTFM_USER = "sbisht";
-const LASTFM_API_KEY = import.meta.env.VITE_LASTFM_API_KEY;; 
-const POLL_INTERVAL = 15000; // Check every 15 seconds
+const LASTFM_USER = import.meta.env.VITE_LASTFM_USER; 
+const LASTFM_API_KEY = import.meta.env.VITE_LASTFM_API_KEY; 
+const POLL_INTERVAL = 15000;
 
 const fetchFallbackArtwork = async (artist, trackName) => {
   try {
@@ -24,18 +23,33 @@ const fetchFallbackArtwork = async (artist, trackName) => {
 
 export default function YtMusicCard() {
   const [track, setTrack] = useState(null);
-  const [loading, setLoading] = useState(true); // Starts true on initial page load
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNowPlaying = async () => {
+      if (!LASTFM_USER || !LASTFM_API_KEY) {
+        console.error("Missing Last.fm environment variables!");
+        setLoading(false);
+        return;
+      }
+
       try {
+        // Added &t=${Date.now()} to bust the cache so it updates instantly
         const res = await fetch(
-          `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_API_KEY}&format=json&limit=1`
+          `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_API_KEY}&format=json&limit=1&t=${Date.now()}`
         );
         const data = await res.json();
 
         if (data.recenttracks && data.recenttracks.track.length > 0) {
           const latest = data.recenttracks.track[0];
+          const isPlaying = latest['@attr']?.nowplaying === 'true';
+
+          // STRICT LIVE MODE: If music is stopped, clear the track out completely
+          if (!isPlaying) {
+            setTrack({ isPlaying: false, name: null, artist: null, albumArt: null });
+            return;
+          }
+
           const artist = latest.artist?.['#text'] || '';
           const name = latest.name || '';
           
@@ -49,13 +63,13 @@ export default function YtMusicCard() {
             name,
             artist,
             albumArt: artUrl,
-            isPlaying: latest['@attr']?.nowplaying === 'true'
+            isPlaying
           });
         }
       } catch (err) {
         console.error("Failed to fetch music data", err);
       } finally {
-        setLoading(false); // Shuts off the skeleton loaders
+        setLoading(false);
       }
     };
 
@@ -65,19 +79,18 @@ export default function YtMusicCard() {
   }, []);
 
   const isInitialLoad = loading && !track;
+  const showTrack = track?.isPlaying && track?.name;
 
   return (
     <div className="bento-card col-4 music-bento" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
       
-      {/* Background artwork glow */}
-      {track?.albumArt && !isInitialLoad && (
+      {track?.albumArt && (
         <div 
           className="music-bg-blur" 
           style={{ backgroundImage: `url(${track.albumArt})` }}
         />
       )}
 
-      {/* Standard Card Header */}
       <div className="card-header" style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>
         <span className="card-title mono">
           {isInitialLoad ? (
@@ -85,7 +98,7 @@ export default function YtMusicCard() {
           ) : track?.isPlaying ? (
             "Now Playing"
           ) : (
-            "Recently Played"
+            "Media Offline"
           )}
         </span>
         
@@ -101,12 +114,10 @@ export default function YtMusicCard() {
         )}
       </div>
 
-      {/* HARDCODED FLEXBOX ROW */}
       <div className="music-body" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: 'auto', position: 'relative', zIndex: 1 }}>
         
         <div className="album-art-wrap" style={{ flexShrink: 0, width: '64px', height: '64px' }}>
           {isInitialLoad ? (
-            /* Skeleton Artwork Block */
             <div className="skeleton" style={{ width: '64px', height: '64px', borderRadius: '12px' }}></div>
           ) : track?.albumArt ? (
             <img 
@@ -126,18 +137,17 @@ export default function YtMusicCard() {
 
         <div className="track-text-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
           {isInitialLoad ? (
-            /* Skeleton Text Bars */
             <>
               <div className="skeleton" style={{ width: '80%', height: '16px', borderRadius: '4px' }}></div>
               <div className="skeleton" style={{ width: '50%', height: '14px', borderRadius: '4px', marginTop: '2px' }}></div>
             </>
           ) : (
             <>
-              <div className="track-title mono" title={track?.name} style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {track?.name || "No track active"}
+              <div className="track-title mono" title={showTrack ? track.name : ''} style={{ fontSize: '15px', fontWeight: '700', color: showTrack ? 'var(--text-main)' : 'var(--text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {showTrack ? track.name : "No active playback"}
               </div>
-              <div className="track-artist-line mono" title={track?.artist} style={{ fontSize: '13px', fontWeight: '500', color: 'var(--accent-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {track?.artist || "YouTube Music"}
+              <div className="track-artist-line mono" title={showTrack ? track.artist : ''} style={{ fontSize: '13px', fontWeight: '500', color: showTrack ? 'var(--accent-primary)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {showTrack ? track.artist : "Awaiting stream..."}
               </div>
             </>
           )}
