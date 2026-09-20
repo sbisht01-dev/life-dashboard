@@ -59,8 +59,9 @@ export default function SleepCard({ events, loading, onOpen }) {
               </div>
             </div>
             <div>
-              <span className="badge badge-indigo mono">
-                <span className="badge-dot-indigo"></span>
+              {/* Updated to use the primary purple theme classes */}
+              <span className="badge badge-primary mono">
+                <span className="badge-dot-primary"></span>
                 {sleepData.efficiency}% Eff.
               </span>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { analyzeSleepForDate, formatSleepTime, formatSleepDuration } from '../utils/sleepUtils';
 import './SleepPage.css';
 
@@ -9,6 +9,87 @@ const getLocalDateString = () => {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+// ------------------------------------------------------------------
+// SVG Dual-Clock Component (Optimized for Sleep Sessions)
+// ------------------------------------------------------------------
+const SleepClockRing = ({ chunks, type, selectedDate }) => {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+
+  // Define the 12-hour window for this specific clock
+  const midnightMs = new Date(`${selectedDate}T00:00:00`).getTime();
+  const twelveHoursMs = 12 * 60 * 60 * 1000;
+  const clockStart = type === 'AM' ? midnightMs : midnightMs + twelveHoursMs;
+  const clockEnd = clockStart + twelveHoursMs;
+
+  // Filter and clamp the sleep/awake chunks strictly to this clock's 12h window
+  const clockChunks = chunks.map(c => {
+    const start = Math.max(c.start, clockStart);
+    const end = Math.min(c.end, clockEnd);
+    if (end > start) {
+      return { ...c, start, end };
+    }
+    return null;
+  }).filter(Boolean);
+
+  return (
+    <div style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto' }}>
+      {/* -90deg rotation puts 00:00 / 12:00 at the top center */}
+      <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%', overflow: 'visible' }}>
+
+        {/* Background Track */}
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--border-subtle)" strokeWidth="6" opacity="0.5" />
+
+        {/* Hour Ticks */}
+        {[...Array(12)].map((_, i) => {
+          const angle = i * 30; // 360deg / 12 hours
+          return (
+            <line
+              key={i}
+              x1="50" y1="7" x2="50" y2="13"
+              stroke="var(--text-faint)"
+              strokeWidth="1.5"
+              transform={`rotate(${angle} 50 50)`}
+            />
+          )
+        })}
+
+        {/* Sleep & Awake Boundary Rings */}
+        {clockChunks.map((c, idx) => {
+          const startPercent = (c.start - clockStart) / twelveHoursMs;
+          const durationPercent = (c.end - c.start) / twelveHoursMs;
+
+          const length = Math.max(durationPercent * circumference, 0.8);
+          const offset = -(startPercent * circumference);
+
+          // Sleep uses solid purple, Awakenings use solid amber
+          const strokeColor = c.type === 'sleep' ? "var(--accent-primary)" : "var(--accent-amber)";
+
+          return (
+            <circle
+              key={`${c.id}-${type}-${idx}`}
+              cx="50" cy="50" r={radius}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="6"
+              strokeDasharray={`${length} ${circumference}`}
+              strokeDashoffset={offset}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Center Labels */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+        <span className="mono" style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)' }}>{type}</span>
+        <span className="mono" style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
+          {type === 'AM' ? '00:00-11:59' : '12:00-23:59'}
+        </span>
+      </div>
+    </div>
+  );
 };
 
 export default function SleepPage({ events, loading, onSync, onBack }) {
@@ -35,69 +116,44 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
     localStorage.removeItem(`sleep_exclude_${selectedDate}`);
   };
 
+  // Helper to quickly shift dates by +/- days
+  const shiftDate = (daysOffset) => {
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const nextDate = new Date(y, m - 1, d + daysOffset);
+    const year = nextDate.getFullYear();
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    setSelectedDate(`${year}-${month}-${day}`);
+  };
+
   const sleepData = useMemo(() => {
     return analyzeSleepForDate(events, selectedDate, excludedIds);
   }, [events, selectedDate, excludedIds]);
 
-  // Generate visual segments and dynamic hour tick markers
-  const visualData = useMemo(() => {
-    if (!sleepData || !sleepData.windowStart || !sleepData.windowEnd) {
-      return { chunks: [], hourTicks: [] };
-    }
-
-    const span = Math.max(sleepData.windowEnd - sleepData.windowStart, 1);
-    const totalHours = span / (1000 * 60 * 60);
-    const stepHours = totalHours > 16 ? 2 : 1;
-
+  // Generate raw structured chunks for the clock rings
+  const rawClockChunks = useMemo(() => {
+    if (!sleepData || !sleepData.hasSleep) return [];
     const chunks = [];
-    if (sleepData.hasSleep) {
-      for (const block of sleepData.stitchedBlocks) {
-        const left = ((block.start - sleepData.windowStart) / span) * 100;
-        const width = (block.durationMs / span) * 100;
-        chunks.push({
-          id: block.id,
-          left,
-          width,
-          type: 'sleep',
-          label: `${formatSleepTime(block.start)} - ${formatSleepTime(block.end)} (${formatSleepDuration(block.durationMs)})`
-        });
-      }
 
-      for (const awake of sleepData.interruptions) {
-        const left = ((awake.start - sleepData.windowStart) / span) * 100;
-        const width = (awake.durationMs / span) * 100;
-        chunks.push({
-          id: `${awake.start}-${awake.end}`,
-          left,
-          width,
-          type: 'awake',
-          label: `Awake: ${formatSleepDuration(awake.durationMs)}`
-        });
-      }
+    for (const block of sleepData.stitchedBlocks) {
+      chunks.push({
+        id: block.id,
+        start: block.start,
+        end: block.end,
+        type: 'sleep',
+      });
     }
 
-    // Dynamic hour ticks
-    const ticks = [];
-    let cur = new Date(sleepData.windowStart);
-    cur.setMinutes(0, 0, 0);
-
-    while (cur.getTime() <= sleepData.windowEnd) {
-      const timeMs = cur.getTime();
-      if (timeMs >= sleepData.windowStart) {
-        const left = ((timeMs - sleepData.windowStart) / span) * 100;
-        const hours = cur.getHours();
-        if (hours % stepHours === 0) {
-          ticks.push({
-            timeMs,
-            left,
-            label: `${String(hours).padStart(2, '0')}:00`
-          });
-        }
-      }
-      cur.setHours(cur.getHours() + 1);
+    for (const awake of sleepData.interruptions) {
+      chunks.push({
+        id: `${awake.start}-${awake.end}`,
+        start: awake.start,
+        end: awake.end,
+        type: 'awake',
+      });
     }
 
-    return { chunks, hourTicks: ticks };
+    return chunks;
   }, [sleepData]);
 
   return (
@@ -116,12 +172,31 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
       <section className="filter-bar mono">
         <div className="filter-inputs">
           <label style={{ color: "var(--text-muted)" }}>Target Morning</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="clean-input mono"
-          />
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button 
+              onClick={() => shiftDate(-1)} 
+              className="btn-pill" 
+              style={{ padding: "4px 8px", minWidth: "auto" }}
+              title="Previous Day"
+            >
+              ◀
+            </button>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="clean-input mono"
+            />
+            <button 
+              onClick={() => shiftDate(1)} 
+              className="btn-pill" 
+              style={{ padding: "4px 8px", minWidth: "auto" }}
+              title="Next Day"
+            >
+              ▶
+            </button>
+          </div>
         </div>
 
         {excludedIds.length > 0 && (
@@ -139,7 +214,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
               <div className="card-header">
                 <span className="card-title mono">Actual Sleep</span>
               </div>
-              <div className="metric-big mono" style={{ color: "#4f46e5" }}>
+              <div className="metric-big mono" style={{ color: "var(--accent-primary)" }}>
                 {formatSleepDuration(sleepData.actualSleepMs)}
               </div>
               <div className="metric-desc mono">Net sleep duration</div>
@@ -171,7 +246,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
               <div className="card-header">
                 <span className="card-title mono">Awakenings</span>
               </div>
-              <div className="metric-big mono" style={{ color: "#d97706" }}>
+              <div className="metric-big mono" style={{ color: "var(--accent-amber)" }}>
                 {sleepData.interruptions.length}
               </div>
               <div className="metric-desc mono">
@@ -179,38 +254,18 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
               </div>
             </div>
 
-            {/* Sleep Timeline */}
+            {/* Sleep Dual-Clock Distribution (Replaced Linear Timeline) */}
             <div className="bento-card col-12">
               <div className="card-header">
-                <span className="card-title mono">Sleep & Awakenings Timeline</span>
+                <span className="card-title mono">Sleep Cycle Distribution</span>
                 <span className="card-title mono">
                   {formatSleepTime(sleepData.windowStart)} — {formatSleepTime(sleepData.windowEnd)} Window
                 </span>
               </div>
 
-              <div className="sleep-timeline-bar-wrap">
-                <div className="sleep-full-track">
-                  {visualData.chunks.map((chunk, idx) => (
-                    <div
-                      key={idx}
-                      className={chunk.type === 'sleep' ? 'sleep-timeline-chunk' : 'awake-timeline-chunk'}
-                      style={{ left: `${chunk.left}%`, width: `${Math.max(chunk.width, 0.4)}%` }}
-                      title={chunk.label}
-                    />
-                  ))}
-                </div>
-
-                <div className="timeline-hour-labels mono">
-                  {visualData.hourTicks.map((tick) => (
-                    <span
-                      key={tick.timeMs}
-                      className="hour-label"
-                      style={{ left: `${tick.left}%` }}
-                    >
-                      {tick.label}
-                    </span>
-                  ))}
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '36px 0', flexWrap: 'wrap', gap: '32px' }}>
+                <SleepClockRing chunks={rawClockChunks} type="AM" selectedDate={selectedDate} />
+                <SleepClockRing chunks={rawClockChunks} type="PM" selectedDate={selectedDate} />
               </div>
             </div>
           </>
