@@ -3,7 +3,7 @@ import './YtMusicCard.jsx';
 
 // TODO: Replace with your actual Last.fm details
 const LASTFM_USER = "sbisht";
-const LASTFM_API_KEY = ""; 
+const LASTFM_API_KEY = import.meta.env.VITE_LASTFM_API_KEY;; 
 const POLL_INTERVAL = 15000; // Check every 15 seconds
 
 const fetchFallbackArtwork = async (artist, trackName) => {
