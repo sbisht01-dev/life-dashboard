@@ -2,7 +2,7 @@
 // SLEEP ENGINE CONFIGURATION
 // ============================================================================
 export const SLEEP_CONFIG = {
-  startHour: 23,       // 11:00 PM
+  startHour: 22,       // 11:00 PM
   startMinute: 0,
 
   endHour: 12,         // 12:00 PM
