@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PhoneTelemetryCard from './Components/PhoneTelemetryCard';
 import PhoneTelemetryPage from './Pages/PhoneTelemetryPage';
 import SleepCard from './Components/SleepCard';
@@ -8,10 +8,34 @@ import './index.css';
 import YtMusicCard from './Components/YtMusicCard';
 const API_URL = "https://api-fargvgjnga-uc.a.run.app/events";
 
+// Helper to get today's date in local time (YYYY-MM-DD)
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function App() {
   const [activeView, setActiveView] = useState('bento');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // State to control the global dashboard date
+  const [dashboardDate, setDashboardDate] = useState(getLocalDateString());
+  const todayStr = getLocalDateString();
+  const isToday = dashboardDate === todayStr;
+
+  // Calendar Math: Shift date by X days
+  const shiftDate = (daysOffset) => {
+    const [y, m, d] = dashboardDate.split('-').map(Number);
+    const nextDate = new Date(y, m - 1, d + daysOffset);
+    const year = nextDate.getFullYear();
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    setDashboardDate(`${year}-${month}-${day}`);
+  };
 
   const fetchTelemetry = async () => {
     setLoading(true);
@@ -62,37 +86,61 @@ export default function App() {
   // -------------------------------------------------------------
   return (
     <div className="app-container">
-      {/* Top Navbar */}
       <header className="app-header">
         <div className="header-brand">
           <span className="status-dot"></span>
           <span>PERSONAL OS</span>
         </div>
-        <button onClick={fetchTelemetry} disabled={loading} className="btn-pill mono">
-          {loading ? "Syncing..." : "Sync"}
-        </button>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          
+          {/* New Date Selector with Jump Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button onClick={() => shiftDate(-1)} className="btn-pill" style={{ padding: "4px 8px", minWidth: "auto" }}>◀</button>
+            <input 
+              type="date" 
+              value={dashboardDate} 
+              onChange={(e) => setDashboardDate(e.target.value)} 
+              className="clean-input mono"
+            />
+            <button 
+              onClick={() => shiftDate(1)} 
+              disabled={isToday} 
+              className="btn-pill" 
+              style={{ 
+                padding: "4px 8px", 
+                minWidth: "auto", 
+                opacity: isToday ? 0.3 : 1, 
+                cursor: isToday ? "not-allowed" : "pointer" 
+              }}
+            >
+              ▶
+            </button>
+          </div>
+
+          <button onClick={fetchTelemetry} disabled={loading} className="btn-pill mono">
+            {loading ? "Syncing..." : "Sync"}
+          </button>
+        </div>
       </header>
 
-      {/* Main Bento Grid */}
       <div className="bento-grid">
-        {/* Bento Slot 01: Phone Telemetry (Width 8) */}
         <PhoneTelemetryCard
           events={events}
           loading={loading}
+          targetDate={dashboardDate}
           onOpen={() => setActiveView('telemetry')}
         />
 
-        {/* Bento Slot 02: Sleep Telemetry (Width 4) */}
         <SleepCard
           events={events}
           loading={loading}
+          targetDate={dashboardDate}
           onOpen={() => setActiveView('sleep')}
         />
 
-        {/* Bento Slot 03: Empty Placeholder (Width 4) */}
         <YtMusicCard />
 
-        {/* Bento Slot 04: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">
             <span className="card-title mono">Slot 04</span>
@@ -103,7 +151,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Bento Slot 05: Empty Placeholder (Width 4) */}
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">
             <span className="card-title mono">Slot 05</span>
