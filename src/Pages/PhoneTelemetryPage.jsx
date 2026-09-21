@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './PhoneTelemetryPage.css';
-
+import PhoneUsageReportModal from '../Components/PhoneUsageReportModal';
 // ------------------------------------------------------------------
 // SVG Dual-Clock Component
 // ------------------------------------------------------------------
@@ -13,7 +13,7 @@ const ClockRing = ({ sessions, type, selectedDate }) => {
   const twelveHoursMs = 12 * 60 * 60 * 1000;
   const clockStart = type === 'AM' ? midnightMs : midnightMs + twelveHoursMs;
   const clockEnd = clockStart + twelveHoursMs;
-  
+
   // Filter and clamp the sessions strictly to this clock's 12h window
   const clockSessions = sessions.map(s => {
     const start = Math.max(s.effectiveStart, clockStart);
@@ -198,27 +198,31 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
 
   const formatClock = (ms) =>
     new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+  const [isReportOpen, setIsReportOpen] = useState(false);
   return (
     <div className="app-container">
       <header className="app-header">
-        <button onClick={onBack} className="back-btn mono">
-          ← Back to Bento Grid
-        </button>
-        <button onClick={onSync} disabled={loading} className="btn-pill mono">
-          {loading ? "Syncing..." : "Sync Events"}
-        </button>
+        <button onClick={onBack} className="back-btn mono">← Back to Bento Grid</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {/* NEW REPORT BUTTON */}
+          <button onClick={() => setIsReportOpen(true)} className="btn-pill mono">
+            Report
+          </button>
+          <button onClick={onSync} disabled={loading} className="btn-pill mono">
+            {loading ? "Syncing..." : "Sync Events"}
+          </button>
+        </div>
       </header>
 
       {/* Filter Controls Bar */}
       <section className="filter-bar mono">
         <div className="filter-inputs">
           <label style={{ color: "var(--text-muted)" }}>Date</label>
-          
+
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <button 
-              onClick={() => shiftDate(-1)} 
-              className="btn-pill" 
+            <button
+              onClick={() => shiftDate(-1)}
+              className="btn-pill"
               style={{ padding: "4px 8px", minWidth: "auto" }}
               title="Previous Day"
             >
@@ -230,13 +234,13 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
               onChange={(e) => setSelectedDate(e.target.value)}
               className="clean-input mono"
             />
-            <button 
-              onClick={() => shiftDate(1)} 
+            <button
+              onClick={() => shiftDate(1)}
               disabled={selectedDate === todayStr}
-              className="btn-pill" 
-              style={{ 
-                padding: "4px 8px", 
-                minWidth: "auto", 
+              className="btn-pill"
+              style={{
+                padding: "4px 8px",
+                minWidth: "auto",
                 opacity: selectedDate === todayStr ? 0.3 : 1,
                 cursor: selectedDate === todayStr ? "not-allowed" : "pointer"
               }}
@@ -341,6 +345,14 @@ export default function PhoneTelemetryPage({ events, loading, onSync, onBack }) 
           </div>
         </div>
       </div>
+
+      {/* popup */}
+      {isReportOpen && (
+        <PhoneUsageReportModal
+          events={events}
+          onClose={() => setIsReportOpen(false)}
+        />
+      )}
     </div>
   );
 }

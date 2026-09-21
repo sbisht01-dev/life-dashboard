@@ -9,23 +9,27 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-export default function PhoneTelemetryCard({ onOpen, events, loading }) {
+// Added targetDate to props
+export default function PhoneTelemetryCard({ onOpen, events, loading, targetDate }) {
   const [tick, setTick] = useState(0);
+  
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const { isUnlocked, todayDurationMs, todaySessions, top5Sessions } = useMemo(() => {
-    if (!events || events.length === 0) {
+    if (!events || events.length === 0 || !targetDate) {
       return { isUnlocked: false, todayDurationMs: 0, todaySessions: [], top5Sessions: [] };
     }
 
-    const todayStr = getLocalDateString();
-    const windowStartMs = new Date(`${todayStr}T00:00:00`).getTime();
-    const windowEndMs = new Date(`${todayStr}T23:59:59`).getTime();
+    const windowStartMs = new Date(`${targetDate}T00:00:00`).getTime();
+    const windowEndMs = new Date(`${targetDate}T23:59:59`).getTime();
     const daySpan = windowEndMs - windowStartMs;
     const now = Date.now();
+    
+    // Check if the target date is strictly today to allow "Live" indicators
+    const isToday = targetDate === getLocalDateString();
 
     const sorted = [...events].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -58,7 +62,8 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       }
     }
 
-    if (pendingUnlock !== null) {
+    // Only force the session open to 'now' if we are looking at today
+    if (pendingUnlock !== null && isToday) {
       rawSessions.push({ rawStart: pendingUnlock, rawEnd: now, isActive: true });
     }
 
@@ -94,12 +99,12 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
     const top5 = [...clamped].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
 
     return {
-      isUnlocked: latestIsUnlocked,
+      isUnlocked: latestIsUnlocked && isToday, // Only show real-time unlock status for today
       todayDurationMs: totalMs,
       todaySessions: clamped,
       top5Sessions: top5
     };
-  }, [events, tick]);
+  }, [events, tick, targetDate]);
 
   const formatDuration = (ms) => {
     const totalSecs = Math.floor(ms / 1000);
@@ -127,7 +132,8 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
           ) : (
             <div className="metric-big mono">{formatDuration(todayDurationMs)}</div>
           )}
-          <div className="metric-desc mono">Screen time today</div>
+          {/* Dynamically display the date we are inspecting */}
+          <div className="metric-desc mono">Screen time for {targetDate}</div>
         </div>
         <div>
           {loading ? (
@@ -143,7 +149,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
 
       <div className="mini-timeline-container">
         <div className="mini-timeline-label mono">
-          <span>Today's Distribution</span>
+          <span>Daily Distribution</span>
           <span>00:00 — 23:59</span>
         </div>
         {loading ? (
@@ -162,7 +168,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
       </div>
 
       <div className="table-section">
-        <div className="table-heading mono">Top 5 Longest Sessions Today</div>
+        <div className="table-heading mono">Top 5 Longest Sessions</div>
         <table className="top-sessions-table mono">
           <thead>
             <tr>
@@ -173,7 +179,6 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
           </thead>
           <tbody>
             {loading ? (
-              // Generate 3 skeleton rows while loading
               [...Array(3)].map((_, idx) => (
                 <tr key={idx}>
                   <td><div className="skeleton" style={{ width: '16px', height: '16px', borderRadius: '4px' }}></div></td>
@@ -184,7 +189,7 @@ export default function PhoneTelemetryCard({ onOpen, events, loading }) {
             ) : top5Sessions.length === 0 ? (
               <tr>
                 <td colSpan="3" style={{ color: "var(--text-faint)", padding: "12px 0", border: "none" }}>
-                  No completed sessions logged today yet.
+                  No completed sessions logged on this date.
                 </td>
               </tr>
             ) : (
