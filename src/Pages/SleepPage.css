@@ -27,7 +27,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #4f46e5;
+  background: var(--accent-primary);
   border-radius: 2px;
   transition: opacity 0.15s ease;
 }
@@ -40,7 +40,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #f59e0b;
+  background: var(--accent-amber);
   border-radius: 2px;
 }
 
@@ -65,12 +65,12 @@
 }
 
 .candidate-item.included {
-  border-color: rgba(79, 70, 229, 0.25);
-  background: #fbfbfe;
+  border-color: rgba(139, 92, 246, 0.3); /* Uses Purple theme */
+  background: var(--bg-hover);
 }
 
 .candidate-item.excluded {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .candidate-left {
@@ -91,11 +91,12 @@
 }
 
 .btn-toggle-candidate:hover {
-  background: #e2e8f0;
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
 }
 
 .btn-toggle-candidate.active {
-  background: #eef2ff;
-  color: #4f46e5;
-  border-color: rgba(79, 70, 229, 0.3);
+  background: var(--accent-primary-bg);
+  color: var(--accent-primary);
+  border-color: rgba(139, 92, 246, 0.4);
 }

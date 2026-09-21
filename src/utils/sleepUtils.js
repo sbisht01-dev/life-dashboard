@@ -2,7 +2,7 @@
 // SLEEP ENGINE CONFIGURATION
 // ============================================================================
 export const SLEEP_CONFIG = {
-  startHour: 22,       // 11:00 PM
+  startHour: 22,       // 10:00 PM
   startMinute: 0,
 
   endHour: 12,         // 12:00 PM
@@ -20,9 +20,7 @@ export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = [
   const targetDate = new Date(year, month - 1, day);
   const prevDate = new Date(year, month - 1, day - 1);
 
-  // 2. AUTOMATIC WINDOW DETECTION:
-  // If startHour > endHour (e.g., 22:00 -> 08:00), it's overnight across midnight (starts yesterday).
-  // If startHour <= endHour (e.g., 16:00 -> 19:00), it's same-day (starts today).
+  // 2. Automatic window detection
   const isOvernight = SLEEP_CONFIG.startHour > SLEEP_CONFIG.endHour;
   const startDate = isOvernight ? prevDate : targetDate;
   const endDate = targetDate;
@@ -170,6 +168,68 @@ export function analyzeSleepForDate(events, targetDateStr, customExcludedIds = [
     idleChunks,
     windowStart,
     windowEnd,
+  };
+}
+
+// ============================================================================
+// SCIENTIFIC SLEEP SCORING ENGINE
+// ============================================================================
+export const TARGET_BEDTIME_DECIMAL = 23.5; // Target: 11:30 PM
+
+export function calculateScientificScore(sleepData) {
+  if (!sleepData || !sleepData.hasSleep) return null;
+
+  // 1. Duration Adequacy (40%)
+  const sleepHours = sleepData.actualSleepMs / (1000 * 60 * 60);
+  let durationScore = 100;
+  if (sleepHours < 7.5) {
+    // Sharp drop-off if under 7.5 hours
+    durationScore = Math.max(0, (sleepHours / 7.5) * 100);
+  } else if (sleepHours > 9.0) {
+    // Penalty for oversleeping (oversleeping leads to sleep inertia)
+    durationScore = Math.max(0, 100 - ((sleepHours - 9.0) * 20));
+  }
+
+  // 2. Circadian Consistency & Drift (30%)
+  const bedDate = new Date(sleepData.bedTime);
+  const bedHour = bedDate.getHours() + (bedDate.getMinutes() / 60);
+
+  // Calculate circular distance across midnight
+  let hourDiff = Math.abs(bedHour - TARGET_BEDTIME_DECIMAL);
+  if (hourDiff > 12) hourDiff = 24 - hourDiff;
+
+  // 20 points penalty per hour off-schedule
+  const rhythmScore = Math.max(0, 100 - (hourDiff * 20));
+
+  // 3. Sleep Fragmentation (30%)
+  const fragScore = sleepData.efficiency;
+
+  // Composite Weighted Sum
+  const compositeScore = Math.round(
+    (durationScore * 0.40) + (rhythmScore * 0.30) + (fragScore * 0.30)
+  );
+
+  // Diagnostic Insights
+  const reasons = [];
+  if (durationScore < 85) {
+    reasons.push(sleepHours < 7 ? `Short sleep (${sleepHours.toFixed(1)}h)` : "Overslept baseline");
+  }
+  if (rhythmScore < 85) {
+    reasons.push(`Circadian drift (${hourDiff.toFixed(1)}h off target)`);
+  }
+  if (fragScore < 90) {
+    reasons.push(`Phone fragmentation (${sleepData.interruptions.length} awakenings)`);
+  }
+  if (reasons.length === 0) {
+    reasons.push("Optimal circadian restoration");
+  }
+
+  return {
+    composite: Math.min(Math.max(compositeScore, 0), 100),
+    duration: Math.round(durationScore),
+    rhythm: Math.round(rhythmScore),
+    fragmentation: Math.round(fragScore),
+    reasons,
   };
 }
 
