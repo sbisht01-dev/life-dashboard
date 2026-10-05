@@ -1,0 +1,56 @@
+
+
+/* Habit List (Page) */
+.habit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.habit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.habit-item:hover {
+  border-color: var(--text-faint);
+}
+
+.habit-item.done {
+  opacity: 0.6;
+}
+
+.habit-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.habit-icon { font-size: 20px; }
+.habit-name { color: var(--text-main); font-weight: 500; }
+.habit-item.done .habit-name { text-decoration: line-through; color: var(--text-faint); }
+
+.checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.checkbox.checked {
+  background-color: var(--accent-emerald, #10b981);
+  border-color: var(--accent-emerald, #10b981);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+}

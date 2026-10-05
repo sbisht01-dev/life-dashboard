@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
 import { 
   analyzeSleepForDate, 
   calculateScientificScore,
@@ -7,7 +9,6 @@ import {
 } from '../utils/sleepUtils';
 import './SleepPage.css';
 
-// Strict local date helper (avoids UTC timezone shift)
 const getLocalDateString = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -16,9 +17,7 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-// ------------------------------------------------------------------
-// SVG Dual-Clock Component (Optimized for Sleep Sessions)
-// ------------------------------------------------------------------
+// ... [Keep your exact SleepClockRing Component here, it does not change] ...
 const SleepClockRing = ({ chunks, type, selectedDate }) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
@@ -90,25 +89,74 @@ const SleepClockRing = ({ chunks, type, selectedDate }) => {
 export default function SleepPage({ events, loading, onSync, onBack }) {
   const [selectedDate, setSelectedDate] = useState(getLocalDateString);
   const [excludedIds, setExcludedIds] = useState([]);
+  const [dbLoading, setDbLoading] = useState(false);
   const todayStr = getLocalDateString();
 
+  // 1. Fetch from Firebase instead of LocalStorage
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(`sleep_exclude_${selectedDate}`) || "[]");
-    setExcludedIds(saved);
+    const fetchExclusions = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      setDbLoading(true);
+      try {
+        const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', selectedDate);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists() && docSnap.data().excludedIds) {
+          setExcludedIds(docSnap.data().excludedIds);
+        } else {
+          setExcludedIds([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch exclusions:", err);
+      } finally {
+        setDbLoading(false);
+      }
+    };
+
+    fetchExclusions();
   }, [selectedDate]);
 
-  const toggleExclude = (id) => {
+  const toggleExclude = async (id) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Error: No user detected by Firebase!");
+      return;
+    }
+
     const next = excludedIds.includes(id)
       ? excludedIds.filter((item) => item !== id)
       : [...excludedIds, id];
 
+    // Optimistic UI update
     setExcludedIds(next);
-    localStorage.setItem(`sleep_exclude_${selectedDate}`, JSON.stringify(next));
-  };
 
-  const resetAllExcludes = () => {
+    // Loud background save
+    try {
+      console.log(`Saving to: users/${user.uid}/sleep_exclusions/${selectedDate}`);
+      const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', selectedDate);
+      await setDoc(docRef, { excludedIds: next }, { merge: true });
+      console.log("Save successful!");
+    } catch (err) {
+      console.error("Firestore Save Error:", err);
+      alert(`Database Error: ${err.message}. Check your Firestore Rules!`);
+    }
+  };
+  
+  // 3. Write to Firebase when resetting
+  const resetAllExcludes = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     setExcludedIds([]);
-    localStorage.removeItem(`sleep_exclude_${selectedDate}`);
+    
+    try {
+      const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', selectedDate);
+      await setDoc(docRef, { excludedIds: [] }, { merge: true });
+    } catch (err) {
+      console.error("Failed to clear exclusions in cloud:", err);
+    }
   };
 
   const shiftDate = (daysOffset) => {
@@ -120,14 +168,12 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
     setSelectedDate(`${year}-${month}-${day}`);
   };
 
-  // Generate Base Sleep Data & Scientific Score
   const { sleepData, scoreData } = useMemo(() => {
     const base = analyzeSleepForDate(events, selectedDate, excludedIds);
     const score = calculateScientificScore(base);
     return { sleepData: base, scoreData: score };
   }, [events, selectedDate, excludedIds]);
 
-  // Generate chunks for the clock rings
   const rawClockChunks = useMemo(() => {
     if (!sleepData || !sleepData.hasSleep) return [];
     const chunks = [];
@@ -140,12 +186,15 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
     return chunks;
   }, [sleepData]);
 
+  // Combine both loading states for the UI
+  const isDataLoading = loading || dbLoading;
+
   return (
     <div className="app-container">
       <header className="app-header">
         <button onClick={onBack} className="back-btn mono">← Back to Bento Grid</button>
-        <button onClick={onSync} disabled={loading} className="btn-pill mono">
-          {loading ? "Syncing..." : "Sync Events"}
+        <button onClick={onSync} disabled={isDataLoading} className="btn-pill mono">
+          {isDataLoading ? "Syncing..." : "Sync Events"}
         </button>
       </header>
 
@@ -182,11 +231,9 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
       </section>
 
       <div className="bento-grid">
-        
-        {/* TOP ROW: Core Metrics */}
         <div className="bento-card col-4">
           <div className="card-header"><span className="card-title mono">Actual Sleep</span></div>
-          {loading ? (
+          {isDataLoading ? (
             <div className="skeleton" style={{ width: '130px', height: '36px', borderRadius: '8px' }}></div>
           ) : (
             <div className="metric-big mono">{sleepData?.hasSleep ? formatSleepDuration(sleepData.actualSleepMs) : "--"}</div>
@@ -196,7 +243,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
 
         <div className="bento-card col-4">
           <div className="card-header"><span className="card-title mono">Time in Bed</span></div>
-          {loading ? (
+          {isDataLoading ? (
             <div className="skeleton" style={{ width: '130px', height: '36px', borderRadius: '8px' }}></div>
           ) : (
             <div className="metric-big mono">{sleepData?.hasSleep ? formatSleepDuration(sleepData.timeInBedMs) : "--"}</div>
@@ -208,7 +255,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
 
         <div className="bento-card col-4">
           <div className="card-header"><span className="card-title mono">Scientific Score</span></div>
-          {loading ? (
+          {isDataLoading ? (
             <div className="skeleton" style={{ width: '90px', height: '36px', borderRadius: '8px' }}></div>
           ) : (
             <div className="metric-big mono" style={{ color: "var(--accent-primary)" }}>
@@ -218,8 +265,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
           <div className="metric-desc mono">Weighted 3-pillar composite</div>
         </div>
 
-        {/* MIDDLE ROW: The 3 Scientific Pillars */}
-        {!loading && scoreData && (
+        {!isDataLoading && scoreData && (
           <>
             <div className="bento-card col-4">
               <div className="card-header"><span className="card-title mono">Duration (40%)</span></div>
@@ -247,7 +293,6 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
           </>
         )}
 
-        {/* CLOCK RINGS: Sleep Cycle Distribution */}
         <div className="bento-card col-12">
           <div className="card-header">
             <span className="card-title mono">Sleep Cycle Distribution</span>
@@ -256,7 +301,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
             </span>
           </div>
 
-          {loading ? (
+          {isDataLoading ? (
             <div style={{ display: 'flex', justifyContent: 'space-around', padding: '36px 0' }}>
               <div className="skeleton" style={{ width: '160px', height: '160px', borderRadius: '50%' }}></div>
               <div className="skeleton" style={{ width: '160px', height: '160px', borderRadius: '50%' }}></div>
@@ -278,7 +323,6 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
           )}
         </div>
 
-        {/* BOTTOM: Candidate Inactivity Gaps List */}
         <div className="bento-card col-12">
           <div className="card-header">
             <span className="card-title mono">Detected Phone Inactivity Gaps</span>
@@ -291,7 +335,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
             </div>
           ) : (
             <div className="candidates-list mono">
-              {loading ? (
+              {isDataLoading ? (
                 [...Array(3)].map((_, idx) => (
                   <div key={idx} className="candidate-item skeleton" style={{ height: '44px', border: 'none' }}></div>
                 ))
