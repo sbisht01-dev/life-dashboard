@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './utils/firebase';
+import HabitsCard from './Components/HabitsCard';
 import PhoneTelemetryCard from './Components/PhoneTelemetryCard';
-import PhoneTelemetryPage from './Pages/PhoneTelemetryPage';
 import SleepCard from './Components/SleepCard';
+
+import LoginPage from './Pages/LoginPage';
+import PhoneTelemetryPage from './Pages/PhoneTelemetryPage';
 import SleepPage from './Pages/SleepPage';
+import HabitsPage from './Pages/HabitsPage';
 import './App.css';
 import './index.css';
-import YtMusicCard from './Components/YtMusicCard';
+
 const API_URL = "https://api-fargvgjnga-uc.a.run.app/events";
 
 // Helper to get today's date in local time (YYYY-MM-DD)
@@ -18,6 +24,11 @@ const getLocalDateString = () => {
 };
 
 export default function App() {
+  // --- AUTHENTICATION STATE ---
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // --- DASHBOARD STATE ---
   const [activeView, setActiveView] = useState('bento');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +37,15 @@ export default function App() {
   const [dashboardDate, setDashboardDate] = useState(getLocalDateString());
   const todayStr = getLocalDateString();
   const isToday = dashboardDate === todayStr;
+
+  // Listen for Firebase Login Status
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Calendar Math: Shift date by X days
   const shiftDate = (daysOffset) => {
@@ -52,9 +72,27 @@ export default function App() {
     }
   };
 
+  // Only fetch telemetry once the user is confirmed logged in
   useEffect(() => {
-    fetchTelemetry();
-  }, []);
+    if (user) {
+      fetchTelemetry();
+    }
+  }, [user]);
+
+  // -------------------------------------------------------------
+  // AUTHENTICATION GATEKEEPER
+  // -------------------------------------------------------------
+  if (authLoading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#090d16', color: '#8b5cf6', fontFamily: 'monospace' }}>
+        Booting Personal OS...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
 
   // -------------------------------------------------------------
   // FULL PAGE VIEWS
@@ -81,6 +119,14 @@ export default function App() {
     );
   }
 
+  if (activeView === 'habits') {
+    return (
+      <HabitsPage
+        onBack={() => setActiveView('bento')}
+      />
+    );
+  }
+
   // -------------------------------------------------------------
   // BENTO GRID HOME VIEW
   // -------------------------------------------------------------
@@ -94,7 +140,7 @@ export default function App() {
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           
-          {/* New Date Selector with Jump Controls */}
+          {/* Date Selector with Jump Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <button onClick={() => shiftDate(-1)} className="btn-pill" style={{ padding: "4px 8px", minWidth: "auto" }}>◀</button>
             <input 
@@ -121,6 +167,11 @@ export default function App() {
           <button onClick={fetchTelemetry} disabled={loading} className="btn-pill mono">
             {loading ? "Syncing..." : "Sync"}
           </button>
+          
+          {/* Optional: Add a quick logout button here for testing */}
+          <button onClick={() => auth.signOut()} className="btn-pill mono" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+            Lock OS
+          </button>
         </div>
       </header>
 
@@ -139,17 +190,12 @@ export default function App() {
           onOpen={() => setActiveView('sleep')}
         />
 
-        <YtMusicCard />
 
-        <div className="bento-card col-4 empty-slot">
-          <div className="card-header">
-            <span className="card-title mono">Slot 04</span>
-          </div>
-          <div className="empty-content mono">
-            <div className="empty-title">Daily Focus & Git</div>
-            <div className="empty-desc">Pending module integration</div>
-          </div>
-        </div>
+        {/* Your new Habit Tracker in Slot 04 */}
+        <HabitsCard 
+          onOpen={() => setActiveView('habits')} 
+        />
+
 
         <div className="bento-card col-4 empty-slot">
           <div className="card-header">

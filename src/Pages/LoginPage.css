@@ -1,0 +1,119 @@
+/* Entrance Animation */
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error Shake Animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f9fafb; /* Very light gray background */
+  justify-content: center;
+  align-items: center;
+}
+
+.login-card {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827; /* Near black */
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #6b7280; /* Medium gray */
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-input {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background-color: #f9fafb;
+  color: #111827;
+  outline: none;
+  /* Smooth transition for hover and typing/focus */
+  transition: all 0.25s ease; 
+}
+
+/* Hovering the input field */
+.login-input:hover {
+  border-color: #9ca3af;
+  background-color: #ffffff;
+}
+
+/* Clicking into the field to type */
+.login-input:focus {
+  background-color: #ffffff;
+  border-color: #8b5cf6; /* OS Purple */
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15); /* Soft purple glow */
+}
+
+.login-button {
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  background-color: #111827; /* Minimal black button */
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 8px;
+  /* Advanced transition for buttery smooth interactions */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hovering the button */
+.login-button:hover {
+  background-color: #374151; /* Lighter black/dark gray */
+  transform: translateY(-2px); /* Lifts up slightly */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Clicking the button */
+.login-button:active {
+  transform: translateY(0) scale(0.97); /* Tactile press down */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-error {
+  color: #ef4444;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+  animation: shake 0.3s ease-in-out; /* Shakes when an error appears */
+}
