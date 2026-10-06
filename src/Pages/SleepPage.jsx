@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../utils/firebase';
-import { 
-  analyzeSleepForDate, 
+import SleepReportModal from '../Components/SleepReportModal';
+
+import {
+  analyzeSleepForDate,
   calculateScientificScore,
-  formatSleepTime, 
-  formatSleepDuration 
+  formatSleepTime,
+  formatSleepDuration
 } from '../utils/sleepUtils';
 import './SleepPage.css';
 
@@ -42,7 +44,7 @@ const SleepClockRing = ({ chunks, type, selectedDate }) => {
         <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--border-subtle)" strokeWidth="6" opacity="0.5" />
 
         {[...Array(12)].map((_, i) => {
-          const angle = i * 30; 
+          const angle = i * 30;
           return (
             <line
               key={i}
@@ -91,6 +93,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
   const [excludedIds, setExcludedIds] = useState([]);
   const [dbLoading, setDbLoading] = useState(false);
   const todayStr = getLocalDateString();
+  const [showReport, setShowReport] = useState(false);
 
   // 1. Fetch from Firebase instead of LocalStorage
   useEffect(() => {
@@ -102,7 +105,7 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
       try {
         const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', selectedDate);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists() && docSnap.data().excludedIds) {
           setExcludedIds(docSnap.data().excludedIds);
         } else {
@@ -143,14 +146,14 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
       alert(`Database Error: ${err.message}. Check your Firestore Rules!`);
     }
   };
-  
+
   // 3. Write to Firebase when resetting
   const resetAllExcludes = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
     setExcludedIds([]);
-    
+
     try {
       const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', selectedDate);
       await setDoc(docRef, { excludedIds: [] }, { merge: true });
@@ -191,13 +194,19 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
 
   return (
     <div className="app-container">
-      <header className="app-header">
+   <header className="app-header">
         <button onClick={onBack} className="back-btn mono">← Back to Bento Grid</button>
-        <button onClick={onSync} disabled={isDataLoading} className="btn-pill mono">
-          {isDataLoading ? "Syncing..." : "Sync Events"}
-        </button>
+        
+        {/* Wrap the right-side buttons in a flex container so they align together */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={() => setShowReport(true)} className="btn-pill mono">
+            Report
+          </button>
+          <button onClick={onSync} disabled={isDataLoading} className="btn-pill mono">
+            {isDataLoading ? "Syncing..." : "Sync Events"}
+          </button>
+        </div>
       </header>
-
       <section className="filter-bar mono">
         <div className="filter-inputs">
           <label style={{ color: "var(--text-muted)" }}>Target Morning</label>
@@ -209,15 +218,15 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="clean-input mono"
             />
-            <button 
-              onClick={() => shiftDate(1)} 
+            <button
+              onClick={() => shiftDate(1)}
               disabled={selectedDate === todayStr}
-              className="btn-pill" 
-              style={{ 
-                padding: "4px 8px", 
+              className="btn-pill"
+              style={{
+                padding: "4px 8px",
                 minWidth: "auto",
-                opacity: selectedDate === todayStr ? 0.3 : 1, 
-                cursor: selectedDate === todayStr ? "not-allowed" : "pointer" 
+                opacity: selectedDate === todayStr ? 0.3 : 1,
+                cursor: selectedDate === todayStr ? "not-allowed" : "pointer"
               }}
             >▶</button>
           </div>
@@ -378,6 +387,12 @@ export default function SleepPage({ events, loading, onSync, onBack }) {
           )}
         </div>
       </div>
+      {showReport && (
+        <SleepReportModal 
+          events={events} 
+          onClose={() => setShowReport(false)} 
+        />
+      )}
     </div>
   );
 }

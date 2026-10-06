@@ -1,0 +1,264 @@
+/* Core Modal Popup Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.25); 
+  backdrop-filter: blur(5px); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; 
+  animation: fadeIn 0.2s ease-out forwards;
+  padding: 16px; /* Responsive padding for mobile edge-spacing */
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); 
+  position: relative;
+  background-color: #ffffff; 
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh; /* Prevents modal from overflowing screen height */
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24
+  px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0; /* Keeps header fixed while body scrolls */
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover { color: #0f172a; }
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto; /* Allows scrolling inside the modal on small screens */
+}
+
+/* Tab Content Animation to Smooth Out Height Jumps */
+.animated-tab-content {
+  animation: fadeSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Timeframe Pills */
+.timeframe-pills {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background-color: #f8fafc; /* Crisp light gray track */
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.timeframe-pills button {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeframe-pills button.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Hero Section */
+.report-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: linear-gradient(to right bottom, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.hero-score {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.hero-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Rhythm Chart */
+.rhythm-chart {
+  margin-bottom: 24px;
+}
+
+.chart-title {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.chart-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 28px;
+}
+
+.chart-row {
+  position: relative;
+  height: 28px; /* Slightly taller to fit text comfortably */
+  background-color: #f1f5f9; /* Light gray track for empty space */
+  border-radius: 14px;
+  width: 100%;
+}
+
+.chart-pill {
+  position: absolute;
+  height: 100%;
+  border-radius: 14px;
+  min-width: 15%; /* Ensures small naps still show text */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); /* Subtle colored glow */
+}
+
+.pill-text {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.chart-guides {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+}
+
+/* Insight Cards */
+.insights-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insight-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.insight-card.type-warning { border-left: 4px solid var(--accent-amber); }
+.insight-card.type-success { border-left: 4px solid var(--accent-emerald); }
+
+.insight-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  font-weight: bold;
+}
+
+.type-warning .insight-icon { color: var(--accent-amber); background-color: #fffbeb; }
+.type-success .insight-icon { color: var(--accent-emerald); background-color: #ecfdf5; }
+
+.insight-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.insight-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(5px); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .report-hero {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .hero-score {
+    font-size: 36px;
+  }
+  
+  .chart-row {
+    height: 24px;
+  }
+  
+  .pill-text {
+    font-size: 9px;
+  }
+}
