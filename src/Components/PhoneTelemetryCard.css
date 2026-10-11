@@ -3,13 +3,14 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .metric-big {
-  font-size: 36px;
+  /* Fluid typography: 28px on mobile, scaling up to 36px on desktop */
+  font-size: clamp(28px, 4vw, 36px);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-main);
@@ -27,25 +28,26 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill); /* Updated to softer radius */
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   border: 1px solid transparent;
+  /* Soft elevation for badges */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s var(--ease-spring);
 }
 
-/* Green shades for Unlocked */
 .badge-unlocked {
   background: var(--accent-emerald-bg);
   color: var(--accent-emerald);
-  border-color: rgba(5, 150, 105, 0.2);
+  border-color: rgba(5, 150, 105, 0.15);
 }
 
-/* Yellow/Amber shades for Locked */
 .badge-locked {
   background: var(--accent-amber-bg);
   color: var(--accent-amber);
-  border-color: rgba(217, 119, 6, 0.25);
+  border-color: rgba(217, 119, 6, 0.15);
 }
 
 /* Status indicator dots */
@@ -58,7 +60,7 @@
 
 .dot-unlocked {
   background-color: var(--accent-emerald);
-  box-shadow: 0 0 6px rgba(5, 150, 105, 0.5);
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.4);
 }
 
 .dot-locked {
@@ -67,31 +69,37 @@
 
 /* Mini Timeline Bar */
 .mini-timeline-container {
-  margin: 18px 0;
+  margin: 20px 0;
 }
 
 .mini-timeline-label {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-faint);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .mini-track {
   position: relative;
   height: 14px;
   background: var(--bg-subtle);
-  border-radius: 6px; /* slightly rounder track */
+  border-radius: var(--radius-pill);
   overflow: hidden;
+  /* Inner shadow to make the track look indented like a physical groove */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .mini-chunk {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: var(--accent-primary-gradient); /* PURPLE GRADIENT APPLIED HERE */
-  border-radius: 2px;
+  background: var(--accent-primary-gradient);
+  border-radius: var(--radius-pill);
+  /* Slight drop shadow on the colored chunk so it pops out of the track */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: width 0.5s var(--ease-spring);
 }
 
 .mini-chunk.tag-live {
@@ -100,16 +108,16 @@
 
 /* Top 5 Table */
 .table-section {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .table-heading {
   font-size: 11px;
-  font-weight: 700; /* Crisper heading */
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .top-sessions-table {
@@ -121,15 +129,25 @@
 .top-sessions-table th {
   text-align: left;
   padding: 8px 10px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-faint);
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.top-sessions-table tr {
+  transition: background-color 0.2s var(--ease-smooth);
+}
+
+/* Table Row Hover State */
+.top-sessions-table tr:hover td {
+  background-color: var(--bg-page);
+}
+
 .top-sessions-table td {
-  padding: 10px;
+  padding: 12px 10px; /* Taller padding for touch targets */
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-main);
+  transition: background-color 0.2s var(--ease-smooth);
 }
 
 .top-sessions-table tr:last-child td {
@@ -139,6 +157,7 @@
 .rank-index {
   color: var(--text-faint);
   width: 32px;
+  font-weight: 500;
 }
 
 .duration-pill {
@@ -146,15 +165,25 @@
   font-weight: 600;
   padding: 4px 10px;
   background: var(--bg-subtle);
-  border-radius: var(--radius-pill); /* Updated to softer radius */
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  transition: all 0.2s var(--ease-smooth);
+}
+
+/* Make the duration pill pop when you hover the card */
+.bento-card:hover .duration-pill {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .tag-badge {
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   margin-left: 8px;
+  letter-spacing: 0.02em;
 }
 
 .tag-live {

@@ -13,16 +13,18 @@
   --radius-pill: 12px;
   --radius-lg: 24px;
 
-  /* Elevation Shadows */
-  --shadow-bento: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 12px 32px -4px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 24px 40px -8px rgba(0, 0, 0, 0.1);
+  /* Elevation Shadows (Multi-layered for natural depth) */
+  --shadow-bento: 0 2px 4px rgba(0, 0, 0, 0.02), 0 8px 16px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.04), 0 16px 32px rgba(0, 0, 0, 0.08);
 
-  /* Typography Colors (Darkened for better contrast) */
+  /* Animation Curves (Removes the stiff, robotic UI feel) */
+  --ease-spring: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Typography Colors */
   --text-main: #0f172a;
   --text-muted: #475569;
-  /* Was lighter, now darker slate */
   --text-faint: #64748b;
-  /* Shifted down one shade */
 
   /* Primary Brand - Purple Gradient */
   --accent-primary: #8b5cf6;
@@ -49,19 +51,12 @@
 /* Global Skeleton Loading Animation */
 .skeleton {
   background: var(--bg-hover);
-  animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-skeleton 1.5s var(--ease-smooth) infinite;
 }
 
 @keyframes pulse-skeleton {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 body {
@@ -69,6 +64,7 @@ body {
   color: var(--text-main);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* Prevents mobile horizontal scrolling */
 }
 
 .mono {

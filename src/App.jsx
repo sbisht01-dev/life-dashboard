@@ -32,7 +32,7 @@ export default function App() {
   const [activeView, setActiveView] = useState('bento');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // State to control the global dashboard date
   const [dashboardDate, setDashboardDate] = useState(getLocalDateString());
   const todayStr = getLocalDateString();
@@ -137,41 +137,38 @@ export default function App() {
           <span className="status-dot"></span>
           <span>PERSONAL OS</span>
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          
+
+        <div className="header-controls">
           {/* Date Selector with Jump Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button onClick={() => shiftDate(-1)} className="btn-pill" style={{ padding: "4px 8px", minWidth: "auto" }}>◀</button>
-            <input 
-              type="date" 
-              value={dashboardDate} 
-              onChange={(e) => setDashboardDate(e.target.value)} 
+          <div className="date-controls">
+            <button onClick={() => shiftDate(-1)} className="btn-pill icon-btn">◀</button>
+            <input
+              type="date"
+              value={dashboardDate}
+              onChange={(e) => setDashboardDate(e.target.value)}
               className="clean-input mono"
             />
-            <button 
-              onClick={() => shiftDate(1)} 
-              disabled={isToday} 
-              className="btn-pill" 
-              style={{ 
-                padding: "4px 8px", 
-                minWidth: "auto", 
-                opacity: isToday ? 0.3 : 1, 
-                cursor: isToday ? "not-allowed" : "pointer" 
+            <button
+              onClick={() => shiftDate(1)}
+              disabled={isToday}
+              className="btn-pill icon-btn"
+              style={{
+                opacity: isToday ? 0.3 : 1,
+                cursor: isToday ? "not-allowed" : "pointer"
               }}
             >
               ▶
             </button>
           </div>
 
-          <button onClick={fetchTelemetry} disabled={loading} className="btn-pill mono">
-            {loading ? "Syncing..." : "Sync"}
-          </button>
-          
-          {/* Optional: Add a quick logout button here for testing */}
-          <button onClick={() => auth.signOut()} className="btn-pill mono" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-            Lock OS
-          </button>
+          <div className="header-actions">
+            <button onClick={fetchTelemetry} disabled={loading} className="btn-pill mono">
+              {loading ? "Syncing..." : "Sync"}
+            </button>
+            <button onClick={() => auth.signOut()} className="btn-pill mono btn-lock">
+              Lock OS
+            </button>
+          </div>
         </div>
       </header>
 
@@ -192,8 +189,8 @@ export default function App() {
 
 
         {/* Your new Habit Tracker in Slot 04 */}
-        <HabitsCard 
-          onOpen={() => setActiveView('habits')} 
+        <HabitsCard
+          onOpen={() => setActiveView('habits')}
         />
 
 

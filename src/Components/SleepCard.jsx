@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
 import { 
   analyzeSleepForDate, 
   calculateScientificScore, 
@@ -79,17 +81,51 @@ const SleepClockRing = ({ chunks, type, selectedDate }) => {
 };
 
 export default function SleepCard({ events, loading, onOpen, targetDate }) {
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [fetchingExcludes, setFetchingExcludes] = useState(true);
+
+  // Fetch Exclusions from Firebase to match the SleepPage
+  useEffect(() => {
+    const fetchExclusions = async () => {
+      if (!targetDate) return;
+      const user = auth.currentUser;
+      
+      if (!user) {
+        setFetchingExcludes(false);
+        return;
+      }
+
+      try {
+        const docRef = doc(db, 'users', user.uid, 'sleep_exclusions', targetDate);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && docSnap.data().excludedIds) {
+          setExcludedIds(docSnap.data().excludedIds);
+        } else {
+          setExcludedIds([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch exclusions for card:", err);
+      } finally {
+        setFetchingExcludes(false);
+      }
+    };
+
+    fetchExclusions();
+  }, [targetDate, loading]); // Re-run if loading state changes (e.g., after a sync)
+
   const { sleepData, scoreData } = useMemo(() => {
     if (!targetDate || !events || events.length === 0) {
       return { sleepData: null, scoreData: null };
     }
-    const savedExcludes = JSON.parse(localStorage.getItem(`sleep_exclude_${targetDate}`) || "[]");
-    const baseData = analyzeSleepForDate(events, targetDate, savedExcludes);
+    
+    // Pass the Firebase-fetched exclusions into the math function
+    const baseData = analyzeSleepForDate(events, targetDate, excludedIds);
     const scientific = calculateScientificScore(baseData);
+    
     return { sleepData: baseData, scoreData: scientific };
-  }, [events, targetDate]);
+  }, [events, targetDate, excludedIds]);
 
-  // Generate chunks for the clock rings instead of the linear timeline
   const rawClockChunks = useMemo(() => {
     if (!sleepData || !sleepData.hasSleep) return [];
     const chunks = [];
@@ -109,6 +145,7 @@ export default function SleepCard({ events, loading, onOpen, targetDate }) {
   };
 
   const scoreTheme = scoreData ? getScoreTheme(scoreData.composite) : null;
+  const isCardLoading = loading || fetchingExcludes;
 
   return (
     <div className="bento-card col-4 clickable-card" onClick={onOpen}>
@@ -117,7 +154,7 @@ export default function SleepCard({ events, loading, onOpen, targetDate }) {
         <span className="card-link-badge mono">Full View →</span>
       </div>
 
-      {loading ? (
+      {isCardLoading ? (
         <>
           <div className="sleep-metric-row">
             <div>
@@ -129,7 +166,6 @@ export default function SleepCard({ events, loading, onOpen, targetDate }) {
             </div>
           </div>
 
-          {/* Clock Ring Skeletons */}
           <div style={{ display: 'flex', justifyContent: 'space-around', margin: '24px 0 16px 0' }}>
             <div className="skeleton" style={{ width: '100px', height: '100px', borderRadius: '50%' }}></div>
             <div className="skeleton" style={{ width: '100px', height: '100px', borderRadius: '50%' }}></div>
@@ -182,7 +218,6 @@ export default function SleepCard({ events, loading, onOpen, targetDate }) {
             </div>
           </div>
 
-          {/* New Dual-Clock Layout */}
           <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', margin: '24px 0 16px 0' }}>
             <div style={{ width: '100px', height: '100px' }}>
               <SleepClockRing chunks={rawClockChunks} type="AM" selectedDate={targetDate} />
@@ -202,8 +237,9 @@ export default function SleepCard({ events, loading, onOpen, targetDate }) {
             <div className="sleep-highlight-item">
               <span className="sleep-highlight-label">Awakenings</span>
               <span className="sleep-highlight-val">
+                {/* NaN Fix applied here by reducing the interruptions array directly */}
                 {sleepData.interruptions.length > 0
-                  ? `${sleepData.interruptions.length} (${formatSleepDuration(sleepData.totalAwakeMs)})`
+                  ? `${sleepData.interruptions.length} (${formatSleepDuration(sleepData.interruptions.reduce((acc, curr) => acc + curr.durationMs, 0))})`
                   : "None"}
               </span>
             </div>

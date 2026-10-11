@@ -1,17 +1,29 @@
-/* Page Wrapper */
+/* Page Wrapper - Responsive Padding */
 .app-container {
   margin: 0 auto;
-  padding: 40px 40px;
+  padding: 20px 16px; /* Tighter on mobile */
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
+  max-width: 1400px; /* Prevents stretching on ultrawide monitors */
 }
 
-/* Header Navbar */
+@media (min-width: 768px) {
+  .app-container {
+    padding: 40px;
+    gap: 28px;
+  }
+}
+
+/* ------------------------- */
+/* Header Navbar Base        */
+/* ------------------------- */
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; 
+  gap: 16px;
 }
 
 .header-brand {
@@ -28,48 +40,146 @@
   height: 8px;
   border-radius: 50%;
   background-color: var(--accent-emerald);
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.4); 
 }
 
+/* Header Control Groupings */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap; 
+}
+
+.date-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile Header Layout Adjustments */
+@media (max-width: 650px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch; /* Forces children to span full width */
+    gap: 12px;
+  }
+  
+  .date-controls {
+    width: 100%;
+  }
+  
+  .date-controls .clean-input {
+    flex: 1; /* Makes the date picker stretch to fill the empty space */
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .header-actions .btn-pill {
+    flex: 1; /* Splits the Sync and Lock buttons 50/50 */
+    justify-content: center;
+  }
+}
+
+/* ------------------------- */
+/* Upgraded Interactive Buttons */
+/* ------------------------- */
 .btn-pill {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   padding: 8px 16px;
-  border-radius: var(--radius-pill); /* Updated to softer radius */
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02); /* Softer button shadow */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s var(--ease-spring);
+  /* Mobile touch target minimum */
+  min-height: 36px; 
+  display: inline-flex;
+  align-items: center;
 }
 
 .btn-pill:hover:not(:disabled) {
-  background: var(--bg-subtle);
-  transform: translateY(-1px);
+  background: var(--bg-card);
+  border-color: rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+}
+
+.btn-pill:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn-pill:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Bento Grid System */
+/* Specific Button Adjustments */
+.icon-btn {
+  padding: 6px 10px;
+  min-width: auto;
+}
+
+.btn-lock {
+  background-color: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.btn-lock:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ------------------------- */
+/* Bento Grid System         */
+/* ------------------------- */
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 24px; /* Slightly wider gap to accommodate larger radius */
+  gap: 16px; /* Tighter gap for mobile */
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    gap: 24px; /* Wider gap restores on desktop */
+  }
 }
 
 .bento-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg); /* Now 24px for a smoother look */
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-bento);
-  padding: 28px; /* Slightly more padding for breathing room */
+  padding: 20px; /* Mobile padding */
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  transition: all 0.4s var(--ease-spring);
+}
+
+@media (min-width: 768px) {
+  .bento-card {
+    padding: 28px; /* Desktop padding */
+  }
 }
 
 .clickable-card {
@@ -78,17 +188,29 @@
 
 .clickable-card:hover {
   box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
-  border-color: rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
+.clickable-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* Desktop Columns */
 .col-12 { grid-column: span 12; }
 .col-8  { grid-column: span 8; }
 .col-6  { grid-column: span 6; }
 .col-4  { grid-column: span 4; }
 .col-3  { grid-column: span 3; }
 
-@media (max-width: 960px) {
+/* Responsive Breakpoints */
+@media (max-width: 1100px) {
+  /* 3-column items become 2-column on small laptops */
+  .col-4 { grid-column: span 6; } 
+}
+
+@media (max-width: 768px) {
+  /* Everything stacks gracefully on phones */
   .col-8, .col-6, .col-4, .col-3 { grid-column: span 12; }
 }
 
@@ -97,15 +219,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .card-header { margin-bottom: 24px; }
 }
 
 .card-title {
   font-size: 11.5px;
-  font-weight: 700; /* Made bolder for crisper readability */
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted); /* Darker grey inherited from index.css */
+  color: var(--text-muted);
 }
 
 .card-link-badge {
@@ -114,7 +240,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: color 0.15s ease;
+  transition: color 0.2s var(--ease-smooth);
 }
 
 .clickable-card:hover .card-link-badge {
@@ -124,9 +250,13 @@
 /* Empty Placeholder Slots */
 .empty-slot {
   border: 1px dashed rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.3);
   box-shadow: none;
-  min-height: 200px;
+  min-height: 150px;
+}
+
+@media (min-width: 768px) {
+  .empty-slot { min-height: 200px; }
 }
 
 .empty-content {
